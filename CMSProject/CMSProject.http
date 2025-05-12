@@ -1,0 +1,6 @@
+@CMSProject_HostAddress = http://localhost:5031
+
+GET {{CMSProject_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
