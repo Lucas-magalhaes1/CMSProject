@@ -9,10 +9,17 @@ namespace CMS.API.Controllers;
 public class UsuariosController : ControllerBase
 {
     private readonly CriarUsuarioUseCase _criarUsuarioUseCase;
+    private readonly ObterUsuarioPorIdUseCase _obterUsuarioPorIdUseCase;
+    private readonly ListarUsuariosUseCase _listarUsuariosUseCase;
 
-    public UsuariosController(CriarUsuarioUseCase criarUsuarioUseCase)
+    public UsuariosController(
+        CriarUsuarioUseCase criarUsuarioUseCase,
+        ObterUsuarioPorIdUseCase obterUsuarioPorIdUseCase,
+        ListarUsuariosUseCase listarUsuariosUseCase)
     {
         _criarUsuarioUseCase = criarUsuarioUseCase;
+        _obterUsuarioPorIdUseCase = obterUsuarioPorIdUseCase;
+        _listarUsuariosUseCase = listarUsuariosUseCase;
     }
 
     [HttpPost]
@@ -26,7 +33,16 @@ public class UsuariosController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> ObterPorId(Guid id)
     {
-        // A ser implementado nos próximos passos (ObterPorIdUseCase)
-        return Ok();
+        var usuario = await _obterUsuarioPorIdUseCase.ExecuteAsync(id);
+        if (usuario == null) return NotFound();
+        return Ok(usuario);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Listar()
+    {
+        var usuarios = await _listarUsuariosUseCase.ExecuteAsync();
+        return Ok(usuarios);
+    }
+
 }

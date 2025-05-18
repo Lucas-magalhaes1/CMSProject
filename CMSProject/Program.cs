@@ -6,22 +6,25 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔧 Serviços
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 📦 Banco de dados PostgreSQL
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 💉 Injeção de dependência
+
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CriarUsuarioUseCase>();
+builder.Services.AddScoped<ObterUsuarioPorIdUseCase>();
+builder.Services.AddScoped<ListarUsuariosUseCase>();
+
 
 var app = builder.Build();
 
-// 🌐 Middlewares
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -31,7 +34,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
-// 🚀 Mapeamento de controllers
+
 app.MapControllers();
 
 app.Run();
