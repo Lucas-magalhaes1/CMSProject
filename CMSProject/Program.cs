@@ -1,9 +1,21 @@
+using CMS.Application.Interfaces;
+using CMS.Application.UseCases.Usuarios;
+using CMS.Infrastructure.Data;
+using CMS.Infrastructure.Data.Repositories;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Adicionando configuração para o banco de dados e repositórios
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<CriarUsuarioUseCase>();
 
 var app = builder.Build();
 

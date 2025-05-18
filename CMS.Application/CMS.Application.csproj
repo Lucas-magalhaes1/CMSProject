@@ -2,13 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CMS.Domain\CMS.Domain.csproj" />
-    <ProjectReference Include="..\CMS.Infrastructure\CMS.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="DTOs\" />
-    <Folder Include="Interfaces\" />
-    <Folder Include="UseCases\" />
   </ItemGroup>
 
   <PropertyGroup>
