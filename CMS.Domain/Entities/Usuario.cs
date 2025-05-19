@@ -1,3 +1,5 @@
+using CMS.Domain.Enums;
+
 namespace CMS.Domain.Entities;
 
 public class Usuario
@@ -6,11 +8,12 @@ public class Usuario
     public string Nome { get; private set; }
     public string Email { get; private set; }
     public string SenhaHash { get; private set; }
-    public string Papel { get; private set; } 
+    public PapelUsuario Papel { get; private set; }
+
 
     protected Usuario() {} 
 
-    public Usuario(string nome, string email, string senhaHash, string papel)
+    public Usuario(string nome, string email, string senhaHash, PapelUsuario papel)
     {
         Nome = nome;
         Email = email;
@@ -28,7 +31,7 @@ public class Usuario
         SenhaHash = novaSenhaHash;
     }
 
-    public void AlterarPapel(string novoPapel)
+    public void AlterarPapel(PapelUsuario novoPapel)
     {
         Papel = novoPapel;
     }
