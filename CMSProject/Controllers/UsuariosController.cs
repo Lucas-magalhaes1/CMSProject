@@ -25,24 +25,29 @@ public class UsuariosController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] UsuarioDto dto)
     {
-        await _criarUsuarioUseCase.ExecuteAsync(dto.Nome!, dto.Email!, dto.Senha!, dto.Papel!);
-        return Ok(new { message = "Usuário criado com sucesso." });
-    }
+        var result = await _criarUsuarioUseCase.ExecuteAsync(dto.Nome!, dto.Email!, dto.Senha!, dto.Papel!);
 
+        if (!result.Sucesso)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> ObterPorId(Guid id)
     {
-        var usuario = await _obterUsuarioPorIdUseCase.ExecuteAsync(id);
-        if (usuario == null) return NotFound();
-        return Ok(usuario);
+        var result = await _obterUsuarioPorIdUseCase.ExecuteAsync(id);
+
+        if (!result.Sucesso)
+            return NotFound(result);
+
+        return Ok(result);
     }
 
     [HttpGet]
     public async Task<IActionResult> Listar()
     {
-        var usuarios = await _listarUsuariosUseCase.ExecuteAsync();
-        return Ok(usuarios);
+        var result = await _listarUsuariosUseCase.ExecuteAsync();
+        return Ok(result);
     }
-
 }
