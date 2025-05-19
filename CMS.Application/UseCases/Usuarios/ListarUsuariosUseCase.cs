@@ -1,5 +1,8 @@
+using CMS.Application.DTOs;
 using CMS.Application.Interfaces;
 using CMS.Domain.Entities;
+
+namespace CMS.Application.UseCases.Usuarios;
 
 public class ListarUsuariosUseCase
 {
@@ -10,8 +13,18 @@ public class ListarUsuariosUseCase
         _usuarioRepository = usuarioRepository;
     }
 
-    public async Task<List<Usuario>> ExecuteAsync()
+    public async Task<ResponseDto<List<UsuarioResponseDto>>> ExecuteAsync()
     {
-        return await _usuarioRepository.ListarAsync();
+        var usuarios = await _usuarioRepository.ListarAsync();
+
+        var dtos = usuarios.Select(u => new UsuarioResponseDto
+        {
+            Id = u.Id,
+            Nome = u.Nome,
+            Email = u.Email,
+            Papel = u.Papel.ToString()
+        }).ToList();
+
+        return ResponseDto<List<UsuarioResponseDto>>.Ok(dtos);
     }
 }
