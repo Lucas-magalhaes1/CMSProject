@@ -9,7 +9,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
+    <Compile Remove="Common\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Common\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Common\**" />
   </ItemGroup>
 
   <PropertyGroup>
