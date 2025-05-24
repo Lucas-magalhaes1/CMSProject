@@ -1,5 +1,6 @@
 using System.Text;
 using CMS.Application.Interfaces;
+using CMS.Application.UseCases.Conteudos;
 using CMS.Application.UseCases.Templates;
 using CMS.Application.UseCases.Usuarios;
 using CMS.Infrastructure.Data;
@@ -63,6 +64,14 @@ builder.Services.AddScoped<CriarTemplateUseCase>();
 builder.Services.AddScoped<ListarTemplatesUseCase>();
 builder.Services.AddScoped<ObterTemplatePorIdUseCase>();
 builder.Services.AddScoped<ClonarTemplateUseCase>();
+
+builder.Services.AddScoped<IConteudoRepository, ConteudoRepository>();
+builder.Services.AddScoped<CriarConteudoUseCase>();
+builder.Services.AddScoped<ListarConteudosUseCase>();
+builder.Services.AddScoped<ObterConteudoPorIdUseCase>();
+builder.Services.AddScoped<EditarConteudoUseCase>();
+builder.Services.AddScoped<SubmeterConteudoUseCase>();
+builder.Services.AddScoped<ClonarConteudoUseCase>();
 
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");

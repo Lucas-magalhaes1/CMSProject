@@ -27,6 +27,8 @@ public class TemplateRepository : ITemplateRepository
 
     public async Task<Template?> ObterPorIdAsync(Guid id)
     {
-        return await _context.Templates.FindAsync(id);
+        return await _context.Templates
+            .Include(t => t.Campos) 
+            .FirstOrDefaultAsync(t => t.Id == id);
     }
 }
