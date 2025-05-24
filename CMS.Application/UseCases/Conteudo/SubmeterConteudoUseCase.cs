@@ -1,15 +1,16 @@
 using CMS.Application.Interfaces;
+using CMS.Domain.Chain.Handlers;
 using CMS.Domain.Entities;
-
-namespace CMS.Application.UseCases.Conteudos;
 
 public class SubmeterConteudoUseCase
 {
     private readonly IConteudoRepository _conteudoRepository;
+    private readonly SubmeterConteudoHandler _submeterConteudoHandler;
 
-    public SubmeterConteudoUseCase(IConteudoRepository conteudoRepository)
+    public SubmeterConteudoUseCase(IConteudoRepository conteudoRepository, SubmeterConteudoHandler submeterConteudoHandler)
     {
         _conteudoRepository = conteudoRepository;
+        _submeterConteudoHandler = submeterConteudoHandler;
     }
 
     public async Task<Conteudo?> ExecuteAsync(Guid id)
@@ -18,10 +19,13 @@ public class SubmeterConteudoUseCase
         if (conteudo == null)
             return null;
 
-        // Submete o conteúdo para revisão
-        conteudo.Submeter();
+        // Atualiza o status para "Submetido" no UseCase
+        conteudo.Status = "Submetido";
+
+        // Salva a alteração no banco de dados
         await _conteudoRepository.AtualizarAsync(conteudo);
 
-        return conteudo;
+        // Passa o conteúdo para o handler, que só validará a transição
+        return await _submeterConteudoHandler.ManipularConteudo(conteudo);
     }
 }

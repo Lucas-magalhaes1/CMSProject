@@ -2,9 +2,6 @@ using CMS.Application.DTOs;
 using CMS.Application.UseCases.Conteudos;
 using CMS.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-
-namespace CMS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -42,7 +39,6 @@ public class ConteudosController : ControllerBase
                 .Select(c => new CampoPreenchido(c.Nome, c.Valor))  
                 .ToList();
 
-            // Executando a lógica de criação do conteúdo
             var conteudo = await _criarConteudoUseCase.ExecuteAsync(conteudoDto.Titulo, conteudoDto.TemplateId, camposPreenchidos);
 
             var responseDto = new ConteudoDto
@@ -55,20 +51,18 @@ public class ConteudosController : ControllerBase
                 {
                     Nome = c.Nome,
                     Valor = c.Valor
-                }).ToList()
+                }).ToList(),
+                Comentario = conteudo.Comentario // Inclui o comentário de devolução
             };
 
-            // Retorna um sucesso
             return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo criado com sucesso"));
         }
         catch (ArgumentException ex)
         {
-            // Retorna falha com o código e mensagem do erro
             return BadRequest(ResponseDto<string>.Falha($"Erro: {ex.Message}"));
         }
         catch (Exception ex)
         {
-            // Retorna falha para outros tipos de erro
             return StatusCode(500, ResponseDto<string>.Falha($"Erro interno: {ex.Message}"));
         }
     }
@@ -76,50 +70,47 @@ public class ConteudosController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar()
     {
-        // Utilizando o UseCase já injetado, que já faz a chamada ao repositório
-        var conteudos = await _listarConteudosUseCase.ExecuteAsync(); // Chamando o caso de uso
+        var conteudos = await _listarConteudosUseCase.ExecuteAsync(); 
 
         var responseDtos = conteudos.Select(c => new ConteudoDto
         {
             Id = c.Id,
             Titulo = c.Titulo,
-            TemplateId = c.Template.Id,  // Acessa o TemplateId corretamente
+            TemplateId = c.Template.Id,
             Status = c.Status,
             CamposPreenchidos = c.CamposPreenchidos.Select(campo => new CampoConteudoDto
             {
                 Nome = campo.Nome,
                 Valor = campo.Valor
-            }).ToList()
+            }).ToList(),
+            Comentario = c.Comentario // Inclui o comentário de devolução
         }).ToList();
 
         return Ok(ResponseDto<List<ConteudoDto>>.Ok(responseDtos));
     }
 
-// Obter conteúdo por ID
     [HttpGet("{id}")]
     public async Task<IActionResult> ObterPorId(Guid id)
     {
         var conteudo = await _obterConteudoPorIdUseCase.ExecuteAsync(id);
-    
-        // Se o conteúdo não for encontrado, retorna um erro
+
         if (conteudo == null)
             return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
 
-        // Monta o DTO para resposta
         var responseDto = new ConteudoDto
         {
             Id = conteudo.Id,
             Titulo = conteudo.Titulo,
-            TemplateId = conteudo.Template.Id,  // Acessa diretamente o TemplateId, pois Template nunca é null
+            TemplateId = conteudo.Template.Id,
             Status = conteudo.Status,
             CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
             {
-                Nome = c.Nome,  // Acessando diretamente a propriedade Nome
-                Valor = c.Valor // Acessando diretamente a propriedade Valor
-            }).ToList()
+                Nome = c.Nome,
+                Valor = c.Valor
+            }).ToList(),
+            Comentario = conteudo.Comentario // Inclui o comentário de devolução
         };
 
-        // Retorna a resposta com sucesso
         return Ok(ResponseDto<ConteudoDto>.Ok(responseDto));
     }
 
@@ -127,8 +118,7 @@ public class ConteudosController : ControllerBase
     public async Task<IActionResult> Editar(Guid id, [FromBody] ConteudoDto conteudoDto)
     {
         var camposPreenchidos = conteudoDto.CamposPreenchidos.Select(c => new CampoPreenchido(c.Nome, c.Valor)).ToList();
-    
-        // Garantir que o Template seja carregado ao buscar o conteúdo
+
         var conteudo = await _editarConteudoUseCase.ExecuteAsync(id, camposPreenchidos);
 
         if (conteudo == null)
@@ -138,42 +128,19 @@ public class ConteudosController : ControllerBase
         {
             Id = conteudo.Id,
             Titulo = conteudo.Titulo,
-            TemplateId = conteudo.Template?.Id ?? Guid.Empty, // Acessa diretamente o TemplateId
+            TemplateId = conteudo.Template?.Id ?? Guid.Empty,
             Status = conteudo.Status,
             CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
             {
                 Nome = c.Nome,
                 Valor = c.Valor
-            }).ToList()
+            }).ToList(),
+            Comentario = conteudo.Comentario // Inclui o comentário de devolução
         };
 
         return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo editado com sucesso"));
     }
 
-
-    [HttpPost("{id}/submeter")]
-    public async Task<IActionResult> Submeter(Guid id)
-    {
-        var conteudo = await _submeterConteudoUseCase.ExecuteAsync(id);
-
-        if (conteudo == null)
-            return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
-
-        var responseDto = new ConteudoDto
-        {
-            Id = conteudo.Id,
-            Titulo = conteudo.Titulo,
-            TemplateId = conteudo.Template?.Id ?? Guid.Empty, // Acessa diretamente o TemplateId
-            Status = conteudo.Status,
-            CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
-            {
-                Nome = c.Nome,
-                Valor = c.Valor
-            }).ToList()
-        };
-
-        return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo submetido para revisão"));
-    }
     [HttpPost("{id}/clone")]
     public async Task<IActionResult> Clonar(Guid id)
     {
@@ -186,13 +153,14 @@ public class ConteudosController : ControllerBase
         {
             Id = conteudoClonado.Id,
             Titulo = conteudoClonado.Titulo,
-            TemplateId = conteudoClonado.Template?.Id ?? Guid.Empty, // Acessa diretamente o TemplateId
+            TemplateId = conteudoClonado.Template?.Id ?? Guid.Empty,
             Status = conteudoClonado.Status,
             CamposPreenchidos = conteudoClonado.CamposPreenchidos.Select(c => new CampoConteudoDto
             {
                 Nome = c.Nome,
                 Valor = c.Valor
-            }).ToList()
+            }).ToList(),
+            Comentario = conteudoClonado.Comentario // Inclui o comentário de devolução
         };
 
         return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo clonado com sucesso"));
