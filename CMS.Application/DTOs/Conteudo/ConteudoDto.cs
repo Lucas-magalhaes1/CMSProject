@@ -8,4 +8,6 @@ public class ConteudoDto
     public Guid TemplateId { get; set; }
     public string Status { get; set; } = "Rascunho";
     public List<CampoConteudoDto> CamposPreenchidos { get; set; } = new();
+    
+    public string? Comentario { get; set; }
 }
