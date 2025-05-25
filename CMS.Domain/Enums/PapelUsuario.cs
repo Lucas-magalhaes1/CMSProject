@@ -4,5 +4,5 @@ public enum PapelUsuario
 {
     Admin,
     Editor,
-    Leitor
+    Redator
 }
