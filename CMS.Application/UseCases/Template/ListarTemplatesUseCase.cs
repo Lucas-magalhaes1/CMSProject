@@ -1,19 +1,28 @@
 using CMS.Application.Interfaces;
 using CMS.Domain.Entities;
 
-namespace CMS.Application.UseCases.Templates;
-
-public class ListarTemplatesUseCase
+namespace CMS.Application.UseCases.Templates
 {
-    private readonly ITemplateRepository _templateRepository;
-
-    public ListarTemplatesUseCase(ITemplateRepository templateRepository)
+    public class ListarTemplatesUseCase
     {
-        _templateRepository = templateRepository;
-    }
+        private readonly ITemplateRepository _templateRepository;
+        private readonly IPermissaoUsuario _permissaoUsuario;
 
-    public async Task<List<Template>> ExecuteAsync()
-    {
-        return await _templateRepository.ListarAsync();
+        public ListarTemplatesUseCase(ITemplateRepository templateRepository, IPermissaoUsuario permissaoUsuario)
+        {
+            _templateRepository = templateRepository;
+            _permissaoUsuario = permissaoUsuario;
+        }
+
+        public async Task<List<Template>> ExecuteAsync()
+        {
+            // Verifica se o usuário tem permissão para listar templates
+            if (!_permissaoUsuario.PodeListarTemplates())  
+            {
+                throw new UnauthorizedAccessException("Você não tem permissão para listar os templates.");
+            }
+
+            return await _templateRepository.ListarAsync();
+        }
     }
 }
