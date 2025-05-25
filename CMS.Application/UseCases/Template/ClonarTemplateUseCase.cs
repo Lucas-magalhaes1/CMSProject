@@ -1,29 +1,37 @@
 using CMS.Application.Interfaces;
 using CMS.Domain.Entities;
 
-namespace CMS.Application.UseCases.Templates;
-
-public class ClonarTemplateUseCase
+namespace CMS.Application.UseCases.Templates
 {
-    private readonly ITemplateRepository _templateRepository;
-
-    public ClonarTemplateUseCase(ITemplateRepository templateRepository)
+    public class ClonarTemplateUseCase
     {
-        _templateRepository = templateRepository;
-    }
+        private readonly ITemplateRepository _templateRepository;
+        private readonly IPermissaoUsuario _permissaoUsuario;
 
-    public async Task<Template?> ExecuteAsync(Guid templateId)
-    {
-        var templateOriginal = await _templateRepository.ObterPorIdAsync(templateId);
-        if (templateOriginal == null)
-            return null;
+        public ClonarTemplateUseCase(ITemplateRepository templateRepository, IPermissaoUsuario permissaoUsuario)
+        {
+            _templateRepository = templateRepository;
+            _permissaoUsuario = permissaoUsuario;
+        }
 
-        var clone = templateOriginal.Clone();
+        public async Task<Template?> ExecuteAsync(Guid templateId)
+        {
+            if (!_permissaoUsuario.PodeClonarTemplate())  
+            {
+                throw new UnauthorizedAccessException("Você não tem permissão para clonar o template.");
+            }
 
-        // Opcional: alterar o nome para indicar que é uma cópia
-        clone = new Template(clone.Nome + " - Cópia", clone.Campos);
+            var templateOriginal = await _templateRepository.ObterPorIdAsync(templateId);
+            if (templateOriginal == null)
+                return null;
 
-        var novoTemplate = await _templateRepository.CriarAsync(clone);
-        return novoTemplate;
+            var clone = templateOriginal.Clone();
+
+            // Opcional: alterar o nome para indicar que é uma cópia
+            clone = new Template(clone.Nome + " - Cópia", clone.Campos);
+
+            var novoTemplate = await _templateRepository.CriarAsync(clone);
+            return novoTemplate;
+        }
     }
 }
