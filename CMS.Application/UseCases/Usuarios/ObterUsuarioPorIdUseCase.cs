@@ -2,31 +2,39 @@ using CMS.Application.DTOs;
 using CMS.Application.Interfaces;
 using CMS.Domain.Entities;
 
-namespace CMS.Application.UseCases.Usuarios;
-
-public class ObterUsuarioPorIdUseCase
+namespace CMS.Application.UseCases.Usuarios
 {
-    private readonly IUsuarioRepository _usuarioRepository;
-
-    public ObterUsuarioPorIdUseCase(IUsuarioRepository usuarioRepository)
+    public class ObterUsuarioPorIdUseCase
     {
-        _usuarioRepository = usuarioRepository;
-    }
+        private readonly IUsuarioRepository _usuarioRepository;
+        private readonly IPermissaoUsuario _permissaoUsuario;
 
-    public async Task<ResponseDto<UsuarioResponseDto>> ExecuteAsync(Guid id)
-    {
-        var usuario = await _usuarioRepository.ObterPorIdAsync(id);
-        if (usuario == null)
-            return ResponseDto<UsuarioResponseDto>.Falha("Usuário não encontrado");
-
-        var dto = new UsuarioResponseDto
+        public ObterUsuarioPorIdUseCase(IUsuarioRepository usuarioRepository, IPermissaoUsuario permissaoUsuario)
         {
-            Id = usuario.Id,
-            Nome = usuario.Nome,
-            Email = usuario.Email,
-            Papel = usuario.Papel.ToString()
-        };
+            _usuarioRepository = usuarioRepository;
+            _permissaoUsuario = permissaoUsuario;
+        }
 
-        return ResponseDto<UsuarioResponseDto>.Ok(dto);
+        public async Task<ResponseDto<UsuarioResponseDto>> ExecuteAsync(Guid id)
+        {
+            if (!_permissaoUsuario.PodeObterUsuarioPorId())  
+            {
+                return ResponseDto<UsuarioResponseDto>.Falha("Você não tem permissão para visualizar o usuário.");
+            }
+
+            var usuario = await _usuarioRepository.ObterPorIdAsync(id);
+            if (usuario == null)
+                return ResponseDto<UsuarioResponseDto>.Falha("Usuário não encontrado");
+
+            var dto = new UsuarioResponseDto
+            {
+                Id = usuario.Id,
+                Nome = usuario.Nome,
+                Email = usuario.Email,
+                Papel = usuario.Papel.ToString()
+            };
+
+            return ResponseDto<UsuarioResponseDto>.Ok(dto);
+        }
     }
 }
