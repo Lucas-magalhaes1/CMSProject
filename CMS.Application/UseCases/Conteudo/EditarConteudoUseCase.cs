@@ -1,29 +1,37 @@
-// CMS.Application/UseCases/Conteudos/EditarConteudoUseCase.cs
 using CMS.Application.Interfaces;
 using CMS.Domain.Entities;
 
-namespace CMS.Application.UseCases.Conteudos;
-
-public class EditarConteudoUseCase
+namespace CMS.Application.UseCases.Conteudos
 {
-    private readonly IConteudoRepository _conteudoRepository;
-
-    public EditarConteudoUseCase(IConteudoRepository conteudoRepository)
+    public class EditarConteudoUseCase
     {
-        _conteudoRepository = conteudoRepository;
-    }
+        private readonly IConteudoRepository _conteudoRepository;
+        private readonly IPermissaoUsuario _permissaoUsuario;
 
-    public async Task<Conteudo?> ExecuteAsync(Guid id, List<CampoPreenchido> camposPreenchidos)  
-    {
-        // Obtém o conteúdo pelo ID
-        var conteudo = await _conteudoRepository.ObterPorIdAsync(id);
-        if (conteudo == null)
-            return null;
+        public EditarConteudoUseCase(IConteudoRepository conteudoRepository, IPermissaoUsuario permissaoUsuario)
+        {
+            _conteudoRepository = conteudoRepository;
+            _permissaoUsuario = permissaoUsuario;
+        }
 
-        // Atualiza o conteúdo com os novos campos preenchidos
-        conteudo.AlterarConteudo(camposPreenchidos);
-        await _conteudoRepository.AtualizarAsync(conteudo);
+        public async Task<Conteudo?> ExecuteAsync(Guid id, List<CampoPreenchido> camposPreenchidos)  
+        {
+            // Verifica se o usuário tem permissão para editar o conteúdo
+            if (!_permissaoUsuario.PodeEditarConteudo()) 
+            {
+                throw new UnauthorizedAccessException("Você não tem permissão para editar o conteúdo.");
+            }
 
-        return conteudo;
+            // Obtém o conteúdo pelo ID
+            var conteudo = await _conteudoRepository.ObterPorIdAsync(id);
+            if (conteudo == null)
+                return null;
+
+            // Atualiza o conteúdo com os novos campos preenchidos
+            conteudo.AlterarConteudo(camposPreenchidos);
+            await _conteudoRepository.AtualizarAsync(conteudo);
+
+            return conteudo;
+        }
     }
 }
