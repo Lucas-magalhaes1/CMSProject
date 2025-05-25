@@ -1,9 +1,12 @@
+using System.Security.Claims;
 using System.Text;
 using CMS.Application.Interfaces;
+using CMS.Application.Services;
 using CMS.Application.UseCases.Conteudos;
 using CMS.Application.UseCases.Templates;
 using CMS.Application.UseCases.Usuarios;
 using CMS.Domain.Chain.Handlers;
+using CMS.Domain.Enums;
 using CMS.Infrastructure.Data;
 using CMS.Infrastructure.Data.Repositories;
 using CMS.Infrastructure.Services;
@@ -83,6 +86,22 @@ builder.Services.AddScoped<SubmeterConteudoHandler>();
 builder.Services.AddScoped<AprovarConteudoHandler>();
 builder.Services.AddScoped<RejeitarConteudoHandler>();
 builder.Services.AddScoped<DevolverConteudoHandler>();
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<IPermissaoUsuario>(provider =>
+{
+    var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
+    var papelUsuarioClaim = httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;  // Corrigido para ClaimTypes.Role
+
+    if (Enum.TryParse(papelUsuarioClaim, out PapelUsuario papelUsuario))
+    {
+        return PermissaoFactory.CriarPermissao(papelUsuario);
+    }
+
+    throw new UnauthorizedAccessException("O papel do usuário não foi encontrado no token.");
+});
+
 
 
 
