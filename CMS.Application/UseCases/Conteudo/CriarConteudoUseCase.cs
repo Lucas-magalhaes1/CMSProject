@@ -1,59 +1,67 @@
-// CMS.Application/UseCases/Conteudos/CriarConteudoUseCase.cs
 using CMS.Application.Interfaces;
 using CMS.Domain.Entities;
 using CMS.Domain.ValueObjects;
 
-namespace CMS.Application.UseCases.Conteudos;
-
-public class CriarConteudoUseCase
+namespace CMS.Application.UseCases.Conteudos
 {
-    private readonly ITemplateRepository _templateRepository;
-    private readonly IConteudoRepository _conteudoRepository;
-
-    public CriarConteudoUseCase(ITemplateRepository templateRepository, IConteudoRepository conteudoRepository)
+    public class CriarConteudoUseCase
     {
-        _templateRepository = templateRepository;
-        _conteudoRepository = conteudoRepository;
-    }
+        private readonly ITemplateRepository _templateRepository;
+        private readonly IConteudoRepository _conteudoRepository;
+        private readonly IPermissaoUsuario _permissaoUsuario;
 
-    public async Task<Conteudo> ExecuteAsync(string titulo, Guid templateId, List<CampoPreenchido> camposPreenchidos)
-    {
-        // Obter template
-        var template = await _templateRepository.ObterPorIdAsync(templateId);
-    
-        // Se o template não for encontrado, lançar erro
-        if (template == null)
+        public CriarConteudoUseCase(ITemplateRepository templateRepository, IConteudoRepository conteudoRepository, IPermissaoUsuario permissaoUsuario)
         {
-            throw new ArgumentException($"Template com ID '{templateId}' não encontrado.");
+            _templateRepository = templateRepository;
+            _conteudoRepository = conteudoRepository;
+            _permissaoUsuario = permissaoUsuario;
         }
 
-        // Validar se todos os campos obrigatórios do template foram preenchidos
-        foreach (var campo in template.Campos.Where(c => c.Obrigatorio))
+        public async Task<Conteudo> ExecuteAsync(string titulo, Guid templateId, List<CampoPreenchido> camposPreenchidos)
         {
-            var campoPreenchido = camposPreenchidos.FirstOrDefault(c => c.Nome == campo.Nome);
-
-            // Se não encontrar o campo preenchido ou o valor estiver vazio
-            if (campoPreenchido == null || string.IsNullOrEmpty(campoPreenchido?.Valor))
+            // Verifica se o usuário tem permissão para criar conteúdo
+            if (!_permissaoUsuario.PodeCriarConteudo())
             {
-                throw new ArgumentException($"O campo '{campo.Nome}' é obrigatório e não foi preenchido. Favor preencher o campo antes de prosseguir.");
+                throw new UnauthorizedAccessException("Você não tem permissão para criar conteúdo.");
             }
-        }
 
-        // Criar conteúdo com os dados validados
-        var conteudo = new Conteudo(titulo, template, camposPreenchidos)
-        {
-            Status = "Rascunho" // Status como "Rascunho"
-        };
+            // Obter template
+            var template = await _templateRepository.ObterPorIdAsync(templateId);
+        
+            // Se o template não for encontrado, lançar erro
+            if (template == null)
+            {
+                throw new ArgumentException($"Template com ID '{templateId}' não encontrado.");
+            }
 
-        // Tentar criar e retornar o conteúdo
-        try
-        {
-            return await _conteudoRepository.CriarAsync(conteudo);
-        }
-        catch (Exception ex)
-        {
-            // Em caso de falha ao criar o conteúdo, lançar um erro mais informativo
-            throw new InvalidOperationException("Erro ao tentar criar o conteúdo. Detalhes do erro: " + ex.Message, ex);
+            // Validar se todos os campos obrigatórios do template foram preenchidos
+            foreach (var campo in template.Campos.Where(c => c.Obrigatorio))
+            {
+                var campoPreenchido = camposPreenchidos.FirstOrDefault(c => c.Nome == campo.Nome);
+
+                // Se não encontrar o campo preenchido ou o valor estiver vazio
+                if (campoPreenchido == null || string.IsNullOrEmpty(campoPreenchido?.Valor))
+                {
+                    throw new ArgumentException($"O campo '{campo.Nome}' é obrigatório e não foi preenchido. Favor preencher o campo antes de prosseguir.");
+                }
+            }
+
+            // Criar conteúdo com os dados validados
+            var conteudo = new Conteudo(titulo, template, camposPreenchidos)
+            {
+                Status = "Rascunho" // Status como "Rascunho"
+            };
+
+            // Tentar criar e retornar o conteúdo
+            try
+            {
+                return await _conteudoRepository.CriarAsync(conteudo);
+            }
+            catch (Exception ex)
+            {
+                // Em caso de falha ao criar o conteúdo, lançar um erro mais informativo
+                throw new InvalidOperationException("Erro ao tentar criar o conteúdo. Detalhes do erro: " + ex.Message, ex);
+            }
         }
     }
 }
