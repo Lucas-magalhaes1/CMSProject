@@ -59,6 +59,7 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<CriarUsuarioUseCase>();
 builder.Services.AddScoped<ObterUsuarioPorIdUseCase>();
 builder.Services.AddScoped<ListarUsuariosUseCase>();
+builder.Services.AddScoped<DeletarUsuarioUseCase>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<LoginUseCase>();
 
@@ -68,6 +69,7 @@ builder.Services.AddScoped<CriarTemplateUseCase>();
 builder.Services.AddScoped<ListarTemplatesUseCase>();
 builder.Services.AddScoped<ObterTemplatePorIdUseCase>();
 builder.Services.AddScoped<ClonarTemplateUseCase>();
+builder.Services.AddScoped<DeletarTemplateUseCase>();
 
 builder.Services.AddScoped<IConteudoRepository, ConteudoRepository>();
 builder.Services.AddScoped<CriarConteudoUseCase>();
@@ -75,6 +77,7 @@ builder.Services.AddScoped<ListarConteudosUseCase>();
 builder.Services.AddScoped<ObterConteudoPorIdUseCase>();
 builder.Services.AddScoped<EditarConteudoUseCase>();
 builder.Services.AddScoped<ClonarConteudoUseCase>();
+builder.Services.AddScoped<DeletarConteudoUseCase>();
 
 builder.Services.AddScoped<SubmeterConteudoUseCase>();
 builder.Services.AddScoped<AprovarConteudoUseCase>();
