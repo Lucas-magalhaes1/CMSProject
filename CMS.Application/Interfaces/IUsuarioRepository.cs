@@ -9,5 +9,5 @@ public interface IUsuarioRepository
     Task<List<Usuario>> ListarAsync();
     Task<Usuario> CriarAsync(Usuario usuario);
     Task AtualizarAsync(Usuario usuario);
-    Task DeletarAsync(Guid id);
+    Task DeletarAsync(Usuario usuario);
 }

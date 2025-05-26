@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using CMS.Application.DTOs;
+using CMS.Application.Interfaces;
 using CMS.Application.UseCases.Conteudos;
 using CMS.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -11,48 +13,64 @@ public class ConteudosController : ControllerBase
     private readonly ListarConteudosUseCase _listarConteudosUseCase;
     private readonly ObterConteudoPorIdUseCase _obterConteudoPorIdUseCase;
     private readonly EditarConteudoUseCase _editarConteudoUseCase;
-    private readonly SubmeterConteudoUseCase _submeterConteudoUseCase;
     private readonly ClonarConteudoUseCase _clonarConteudoUseCase;
+    private readonly DeletarConteudoUseCase _deletarConteudoUseCase;
+    private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IPermissaoUsuario _permissaoUsuario;
 
     public ConteudosController(
         CriarConteudoUseCase criarConteudoUseCase,
         ListarConteudosUseCase listarConteudosUseCase,
         ObterConteudoPorIdUseCase obterConteudoPorIdUseCase,
         EditarConteudoUseCase editarConteudoUseCase,
-        SubmeterConteudoUseCase submeterConteudoUseCase,
-        ClonarConteudoUseCase clonarConteudoUseCase)
+        ClonarConteudoUseCase clonarConteudoUseCase,
+        DeletarConteudoUseCase deletarConteudoUseCase,
+        IUsuarioRepository usuarioRepository,
+        IPermissaoUsuario permissaoUsuario)
     {
         _criarConteudoUseCase = criarConteudoUseCase;
         _listarConteudosUseCase = listarConteudosUseCase;
         _obterConteudoPorIdUseCase = obterConteudoPorIdUseCase;
         _editarConteudoUseCase = editarConteudoUseCase;
-        _submeterConteudoUseCase = submeterConteudoUseCase;
         _clonarConteudoUseCase = clonarConteudoUseCase;
+        _deletarConteudoUseCase = deletarConteudoUseCase;
+        _usuarioRepository = usuarioRepository;
+        _permissaoUsuario = permissaoUsuario;
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> Criar([FromBody] ConteudoDto conteudoDto)
     {
         try
         {
+            var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var usuario = await _usuarioRepository.ObterPorIdAsync(usuarioId);
+            if (usuario == null)
+            {
+                return BadRequest(ResponseDto<string>.Falha("Usuário não encontrado"));
+            }
+
+            conteudoDto.NomeCriador = usuario.Nome;
+
             var camposPreenchidos = conteudoDto.CamposPreenchidos
-                .Select(c => new CampoPreenchido(c.Nome, c.Valor))  
+                .Select(c => new CampoPreenchido(c.Nome, c.Valor))
                 .ToList();
 
-            var conteudo = await _criarConteudoUseCase.ExecuteAsync(conteudoDto.Titulo, conteudoDto.TemplateId, camposPreenchidos);
+            var conteudo = await _criarConteudoUseCase.ExecuteAsync(conteudoDto.Titulo, conteudoDto.TemplateId, camposPreenchidos, usuarioId,usuario.Nome);
 
             var responseDto = new ConteudoDto
             {
                 Id = conteudo.Id,
                 Titulo = conteudo.Titulo,
-                TemplateId = conteudo.Template.Id, 
+                TemplateId = conteudo.Template.Id,
                 Status = conteudo.Status,
                 CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
                 {
                     Nome = c.Nome,
                     Valor = c.Valor
                 }).ToList(),
-                Comentario = conteudo.Comentario // Inclui o comentário de devolução
+                Comentario = conteudo.Comentario,
+                NomeCriador = conteudoDto.NomeCriador,
             };
 
             return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo criado com sucesso"));
@@ -70,99 +88,188 @@ public class ConteudosController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar()
     {
-        var conteudos = await _listarConteudosUseCase.ExecuteAsync(); 
-
-        var responseDtos = conteudos.Select(c => new ConteudoDto
+        try
         {
-            Id = c.Id,
-            Titulo = c.Titulo,
-            TemplateId = c.Template.Id,
-            Status = c.Status,
-            CamposPreenchidos = c.CamposPreenchidos.Select(campo => new CampoConteudoDto
+            var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var conteudos = await _listarConteudosUseCase.ExecuteAsync(usuarioId);
+
+            var responseDtos = conteudos.Select(c => new ConteudoDto
             {
-                Nome = campo.Nome,
-                Valor = campo.Valor
-            }).ToList(),
-            Comentario = c.Comentario // Inclui o comentário de devolução
-        }).ToList();
+                Id = c.Id,
+                Titulo = c.Titulo,
+                TemplateId = c.Template.Id,
+                Status = c.Status,
+                CamposPreenchidos = c.CamposPreenchidos.Select(campo => new CampoConteudoDto
+                {
+                    Nome = campo.Nome,
+                    Valor = campo.Valor
+                }).ToList(),
+                NomeCriador = c.NomeCriador,
+                Comentario = c.Comentario
+            }).ToList();
 
-        return Ok(ResponseDto<List<ConteudoDto>>.Ok(responseDtos));
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> ObterPorId(Guid id)
-    {
-        var conteudo = await _obterConteudoPorIdUseCase.ExecuteAsync(id);
-
-        if (conteudo == null)
-            return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
-
-        var responseDto = new ConteudoDto
+            return Ok(ResponseDto<List<ConteudoDto>>.Ok(responseDtos));
+        }
+        catch (UnauthorizedAccessException ex)
         {
-            Id = conteudo.Id,
-            Titulo = conteudo.Titulo,
-            TemplateId = conteudo.Template.Id,
-            Status = conteudo.Status,
-            CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
-            {
-                Nome = c.Nome,
-                Valor = c.Valor
-            }).ToList(),
-            Comentario = conteudo.Comentario // Inclui o comentário de devolução
-        };
+            // Retorna uma resposta 403 Forbidden com a mensagem de erro
+            return Forbid(); // Ou, para incluir a mensagem, use o StatusCode diretamente
+        }
 
-        return Ok(ResponseDto<ConteudoDto>.Ok(responseDto));
+        catch (Exception ex)
+        {
+            return StatusCode(500, ResponseDto<string>.Falha($"Erro interno: {ex.Message}"));
+        }
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Editar(Guid id, [FromBody] ConteudoDto conteudoDto)
     {
-        var camposPreenchidos = conteudoDto.CamposPreenchidos.Select(c => new CampoPreenchido(c.Nome, c.Valor)).ToList();
-
-        var conteudo = await _editarConteudoUseCase.ExecuteAsync(id, camposPreenchidos);
-
-        if (conteudo == null)
-            return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
-
-        var responseDto = new ConteudoDto
+        try
         {
-            Id = conteudo.Id,
-            Titulo = conteudo.Titulo,
-            TemplateId = conteudo.Template?.Id ?? Guid.Empty,
-            Status = conteudo.Status,
-            CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
-            {
-                Nome = c.Nome,
-                Valor = c.Valor
-            }).ToList(),
-            Comentario = conteudo.Comentario // Inclui o comentário de devolução
-        };
+            var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-        return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo editado com sucesso"));
+            var camposPreenchidos = conteudoDto.CamposPreenchidos
+                .Select(c => new CampoPreenchido(c.Nome, c.Valor))
+                .ToList();
+
+            var conteudo = await _editarConteudoUseCase.ExecuteAsync(id, camposPreenchidos, usuarioId);
+
+            if (conteudo == null)
+                return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
+
+            var responseDto = new ConteudoDto
+            {
+                Id = conteudo.Id,
+                Titulo = conteudo.Titulo,
+                TemplateId = conteudo.Template?.Id ?? Guid.Empty,
+                Status = conteudo.Status,
+                CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
+                {
+                    Nome = c.Nome,
+                    Valor = c.Valor
+                }).ToList(),
+                Comentario = conteudo.Comentario
+            };
+
+            return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo editado com sucesso"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ResponseDto<string>.Falha($"Erro interno: {ex.Message}"));
+        }
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> ObterPorId(Guid id)
+    {
+        try
+        {
+            var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            // Verificar permissão de acesso ao conteúdo por ID
+            if (!_permissaoUsuario.PodeObterConteudoPorId())
+                return Forbid();
+
+            var conteudo = await _obterConteudoPorIdUseCase.ExecuteAsync(id);
+
+            if (conteudo == null)
+                return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
+
+            // Permitir acesso se for admin/editor ou criador do conteúdo
+            bool usuarioEhAdminOuEditor = _permissaoUsuario.PodeAprovarConteudo(); // Considera admin/editor
+            if (!usuarioEhAdminOuEditor && conteudo.CriadoPor != usuarioId)
+                return Forbid();
+
+            var responseDto = new ConteudoDto
+            {
+                Id = conteudo.Id,
+                Titulo = conteudo.Titulo,
+                TemplateId = conteudo.Template.Id,
+                Status = conteudo.Status,
+                CamposPreenchidos = conteudo.CamposPreenchidos.Select(c => new CampoConteudoDto
+                {
+                    Nome = c.Nome,
+                    Valor = c.Valor
+                }).ToList(),
+                NomeCriador = conteudo.NomeCriador,
+                Comentario = conteudo.Comentario
+            };
+
+            return Ok(ResponseDto<ConteudoDto>.Ok(responseDto));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ResponseDto<string>.Falha($"Erro interno: {ex.Message}"));
+        }
     }
 
     [HttpPost("{id}/clone")]
     public async Task<IActionResult> Clonar(Guid id)
     {
-        var conteudoClonado = await _clonarConteudoUseCase.ExecuteAsync(id);
-
-        if (conteudoClonado == null)
-            return NotFound(ResponseDto<string>.Falha("Conteúdo original não encontrado"));
-
-        var responseDto = new ConteudoDto
+        try
         {
-            Id = conteudoClonado.Id,
-            Titulo = conteudoClonado.Titulo,
-            TemplateId = conteudoClonado.Template?.Id ?? Guid.Empty,
-            Status = conteudoClonado.Status,
-            CamposPreenchidos = conteudoClonado.CamposPreenchidos.Select(c => new CampoConteudoDto
-            {
-                Nome = c.Nome,
-                Valor = c.Valor
-            }).ToList(),
-            Comentario = conteudoClonado.Comentario // Inclui o comentário de devolução
-        };
+            var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var conteudoClonado = await _clonarConteudoUseCase.ExecuteAsync(id, usuarioId);
 
-        return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo clonado com sucesso"));
+            if (conteudoClonado == null)
+                return NotFound(ResponseDto<string>.Falha("Conteúdo original não encontrado"));
+
+            var responseDto = new ConteudoDto
+            {
+                Id = conteudoClonado.Id,
+                Titulo = conteudoClonado.Titulo,
+                TemplateId = conteudoClonado.Template?.Id ?? Guid.Empty,
+                Status = conteudoClonado.Status,
+                CamposPreenchidos = conteudoClonado.CamposPreenchidos.Select(c => new CampoConteudoDto
+                {
+                    Nome = c.Nome,
+                    Valor = c.Valor
+                }).ToList(),
+                Comentario = conteudoClonado.Comentario
+            };
+
+            return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo clonado com sucesso"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ResponseDto<string>.Falha($"Erro interno: {ex.Message}"));
+        }
+    }
+    
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Deletar(Guid id)
+    {
+        try
+        {
+            var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            bool deletado = await _deletarConteudoUseCase.ExecuteAsync(id, usuarioId);
+
+            if (!deletado)
+                return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
+
+            return Ok(ResponseDto<string>.Ok(null, "Conteúdo deletado com sucesso"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ResponseDto<string>.Falha($"Erro interno: {ex.Message}"));
+        }
     }
 }

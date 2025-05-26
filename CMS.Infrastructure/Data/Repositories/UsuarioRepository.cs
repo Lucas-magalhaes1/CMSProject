@@ -41,14 +41,10 @@ namespace CMS.Infrastructure.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeletarAsync(Guid id)
+        public async Task DeletarAsync(Usuario usuario)
         {
-            var usuario = await _context.Usuarios.FindAsync(id);
-            if (usuario != null)
-            {
-                _context.Usuarios.Remove(usuario);
-                await _context.SaveChangesAsync();
-            }
+            _context.Usuarios.Remove(usuario);
+            await _context.SaveChangesAsync();
         }
     }
 }

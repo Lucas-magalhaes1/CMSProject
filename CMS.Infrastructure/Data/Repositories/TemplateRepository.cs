@@ -31,4 +31,10 @@ public class TemplateRepository : ITemplateRepository
             .Include(t => t.Campos) 
             .FirstOrDefaultAsync(t => t.Id == id);
     }
+
+    public async Task DeletarAsync(Template template)
+    {
+        _context.Templates.Remove(template);
+        await _context.SaveChangesAsync();
+    }
 }

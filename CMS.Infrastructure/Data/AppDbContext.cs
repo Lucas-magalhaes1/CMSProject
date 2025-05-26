@@ -8,9 +8,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Template> Templates { get; set; }
-    public DbSet<Conteudo> Conteudos { get; set; }  // Novo DbSet para Conteúdo
-    
-    public DbSet<CampoPreenchido> CampoPreenchidos { get; set; }  // Novo DbSet para CampoPreenchido
+    public DbSet<Conteudo> Conteudos { get; set; }  // DbSet para Conteúdo
+    public DbSet<CampoPreenchido> CampoPreenchidos { get; set; }  // DbSet para CampoPreenchido
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,6 +46,11 @@ public class AppDbContext : DbContext
                 cb.HasKey("Id");
                 cb.ToTable("CampoPreenchidos");
             });
+
+        // Configuração do campo CriadoPor (autor do conteúdo)
+        modelBuilder.Entity<Conteudo>()
+            .Property(c => c.CriadoPor)  // O campo CriadoPor foi adicionado
+            .IsRequired(); // Definir como obrigatório
 
         base.OnModelCreating(modelBuilder);
     }
