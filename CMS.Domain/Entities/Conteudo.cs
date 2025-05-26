@@ -11,24 +11,28 @@
         public List<CampoPreenchido> CamposPreenchidos { get; private set; } = new();
         public string? Comentario { get; set; }
         
+        public Guid CriadoPor { get; private set; }
         public string Status { get;  set; }
+        
+        public string NomeCriador { get; set; } = null!;
 
         // Construtor para EF Core
         protected Conteudo() { }
 
-        public Conteudo(string titulo, Template template, List<CampoPreenchido> camposPreenchidos)
+        public Conteudo(string titulo, Template template, List<CampoPreenchido> camposPreenchidos, Guid criadoPor,string nomeCriador)
         {
             Titulo = titulo;
             Template = template;
             CamposPreenchidos = camposPreenchidos;
             Status = "Rascunho";
+            CriadoPor = criadoPor;
+            NomeCriador = nomeCriador ?? throw new ArgumentNullException(nameof(nomeCriador));
         }
         
-        // Método de clonagem
         public Conteudo Clone()
         {
             var camposClone = new List<CampoPreenchido>(CamposPreenchidos);
-            return new Conteudo(Titulo + " - Cópia", Template, camposClone);
+            return new Conteudo(Titulo + " - Cópia", Template, camposClone, CriadoPor, NomeCriador);
         }
 
         // Métodos para manipulação de conteúdo

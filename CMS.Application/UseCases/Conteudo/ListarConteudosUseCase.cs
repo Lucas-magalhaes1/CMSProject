@@ -14,15 +14,16 @@ namespace CMS.Application.UseCases.Conteudos
             _permissaoUsuario = permissaoUsuario;
         }
 
-        public async Task<List<Conteudo>> ExecuteAsync()
+        public async Task<List<Conteudo>> ExecuteAsync(Guid usuarioId)
         {
-            // Verifica se o usuário tem permissão para visualizar o conteúdo
-            if (!_permissaoUsuario.PodeListarConteudos())  // Ajuste para a permissão correta
+            // Se o usuário é um admin ou editor, pode listar todos os conteúdos
+            if (_permissaoUsuario.PodeAprovarConteudo())  // Admin ou Editor
             {
-                throw new UnauthorizedAccessException("Você não tem permissão para listar o conteúdo.");
+                return await _conteudoRepository.ListarAsync();
             }
-
-            return await _conteudoRepository.ListarAsync();
+            
+            // Caso contrário, apenas o autor pode listar seus próprios conteúdos
+            return await _conteudoRepository.ListarPorCriadorAsync(usuarioId); // Método para listar apenas os conteúdos criados pelo usuário
         }
     }
 }

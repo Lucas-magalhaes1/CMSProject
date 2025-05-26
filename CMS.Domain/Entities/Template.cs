@@ -1,25 +1,27 @@
-using System.Collections.Generic;
-using CMS.Domain.Services;
 using CMS.Domain.ValueObjects;
 
-namespace CMS.Domain.Entities;
-
-public class Template : IPrototype<Template>
+public class Template
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Nome { get; private set; }
     public List<CampoTemplate> Campos { get; private set; } = new();
 
-    // Construtor protegido para EF Core
+    public Guid CriadoPor { get; private set; }
+    public string NomeCriador { get; private set; } = null!;
+
+    // Construtor para EF Core
     protected Template() { }
 
-    // Construtor público usado no UseCase
-    public Template(string nome, List<CampoTemplate> campos)
+    // Construtor principal, agora com criadoPor e nomeCriador
+    public Template(string nome, List<CampoTemplate> campos, Guid criadoPor, string nomeCriador)
     {
         Nome = nome;
         Campos = campos;
+        CriadoPor = criadoPor;
+        NomeCriador = nomeCriador ?? throw new ArgumentNullException(nameof(nomeCriador));
     }
 
+    // Clone atualizado para manter CriadoPor e NomeCriador
     public Template Clone()
     {
         var camposClone = new List<CampoTemplate>();
@@ -27,6 +29,7 @@ public class Template : IPrototype<Template>
         {
             camposClone.Add(new CampoTemplate(campo.Nome, campo.Tipo, campo.Obrigatorio));
         }
-        return new Template(Nome, camposClone);
+
+        return new Template(Nome, camposClone, CriadoPor, NomeCriador);
     }
 }

@@ -14,18 +14,18 @@ namespace CMS.Application.UseCases.Conteudos
             _permissaoUsuario = permissaoUsuario;
         }
 
-        public async Task<Conteudo?> ExecuteAsync(Guid id)
+        public async Task<Conteudo?> ExecuteAsync(Guid id, Guid usuarioId)
         {
-            // Verifica se o usuário tem permissão para clonar o conteúdo
-            if (!_permissaoUsuario.PodeClonarConteudo())  
-            {
-                throw new UnauthorizedAccessException("Você não tem permissão para clonar o conteúdo.");
-            }
-
             // Buscar o conteúdo original pelo id
             var conteudoOriginal = await _conteudoRepository.ObterPorIdAsync(id);
             if (conteudoOriginal == null)
                 return null;
+
+            // Verifica se o conteúdo é do usuário ou se ele tem permissão para clonar (admin/editor)
+            if (conteudoOriginal.CriadoPor != usuarioId && !_permissaoUsuario.PodeAprovarConteudo()) // Apenas o criador ou admin/editor
+            {
+                throw new UnauthorizedAccessException("Você não tem permissão para clonar este conteúdo.");
+            }
 
             // Clonar o conteúdo usando o método Clone()
             var conteudoClone = conteudoOriginal.Clone();

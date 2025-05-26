@@ -14,18 +14,18 @@ namespace CMS.Application.UseCases.Conteudos
             _permissaoUsuario = permissaoUsuario;
         }
 
-        public async Task<Conteudo?> ExecuteAsync(Guid id, List<CampoPreenchido> camposPreenchidos)  
+        public async Task<Conteudo?> ExecuteAsync(Guid id, List<CampoPreenchido> camposPreenchidos, Guid usuarioId)
         {
-            // Verifica se o usuário tem permissão para editar o conteúdo
-            if (!_permissaoUsuario.PodeEditarConteudo()) 
-            {
-                throw new UnauthorizedAccessException("Você não tem permissão para editar o conteúdo.");
-            }
-
             // Obtém o conteúdo pelo ID
             var conteudo = await _conteudoRepository.ObterPorIdAsync(id);
             if (conteudo == null)
                 return null;
+
+            // Verifica se o conteúdo é do usuário ou se ele tem permissão para editar (admin/editor)
+            if (conteudo.CriadoPor != usuarioId && !_permissaoUsuario.PodeEditarConteudo()) // Apenas o criador ou admin/editor
+            {
+                throw new UnauthorizedAccessException("Você não tem permissão para editar este conteúdo.");
+            }
 
             // Atualiza o conteúdo com os novos campos preenchidos
             conteudo.AlterarConteudo(camposPreenchidos);

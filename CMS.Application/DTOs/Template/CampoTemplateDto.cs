@@ -7,4 +7,5 @@ public class CampoTemplateDto
     public string Nome { get; set; } = null!;
     public TipoCampo Tipo { get; set; }
     public bool Obrigatorio { get; set; }
+    
 }
