@@ -51,4 +51,9 @@
             Status = "Rascunho";  // Retorna para o status "Submetido"
             Comentario = comentario;  // Adiciona o comentário de correção
         }
+        
+        public void AlterarTitulo(string novoTitulo)
+        {
+            Titulo = novoTitulo;
+        }
     }

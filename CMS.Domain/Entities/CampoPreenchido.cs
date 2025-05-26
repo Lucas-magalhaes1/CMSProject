@@ -19,4 +19,10 @@ public class CampoPreenchido
     {
         return Valor;  // Apenas retorna o valor como string
     }
+    
+    // Método para atualizar o valor
+    public void AtualizarValor(string novoValor)
+    {
+        Valor = novoValor;
+    }
 }

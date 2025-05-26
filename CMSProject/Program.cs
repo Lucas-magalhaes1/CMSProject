@@ -77,7 +77,8 @@ builder.Services.AddScoped<ListarConteudosUseCase>();
 builder.Services.AddScoped<ObterConteudoPorIdUseCase>();
 builder.Services.AddScoped<EditarConteudoUseCase>();
 builder.Services.AddScoped<ClonarConteudoUseCase>();
-builder.Services.AddScoped<DeletarConteudoUseCase>();
+builder.Services.AddScoped<DeletarConteudoUseCase>();   
+
 
 builder.Services.AddScoped<SubmeterConteudoUseCase>();
 builder.Services.AddScoped<AprovarConteudoUseCase>();
@@ -89,6 +90,8 @@ builder.Services.AddScoped<SubmeterConteudoHandler>();
 builder.Services.AddScoped<AprovarConteudoHandler>();
 builder.Services.AddScoped<RejeitarConteudoHandler>();
 builder.Services.AddScoped<DevolverConteudoHandler>();
+
+builder.Services.AddLogging();
 
 builder.Services.AddHttpContextAccessor();
 

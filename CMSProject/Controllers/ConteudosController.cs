@@ -17,6 +17,8 @@ public class ConteudosController : ControllerBase
     private readonly DeletarConteudoUseCase _deletarConteudoUseCase;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IPermissaoUsuario _permissaoUsuario;
+    private readonly ILogger<ConteudosController> _logger;
+    private readonly ITemplateRepository _templateRepository;  
 
     public ConteudosController(
         CriarConteudoUseCase criarConteudoUseCase,
@@ -26,7 +28,9 @@ public class ConteudosController : ControllerBase
         ClonarConteudoUseCase clonarConteudoUseCase,
         DeletarConteudoUseCase deletarConteudoUseCase,
         IUsuarioRepository usuarioRepository,
-        IPermissaoUsuario permissaoUsuario)
+        IPermissaoUsuario permissaoUsuario,
+        ILogger<ConteudosController> logger,
+        ITemplateRepository templateRepository)
     {
         _criarConteudoUseCase = criarConteudoUseCase;
         _listarConteudosUseCase = listarConteudosUseCase;
@@ -36,6 +40,8 @@ public class ConteudosController : ControllerBase
         _deletarConteudoUseCase = deletarConteudoUseCase;
         _usuarioRepository = usuarioRepository;
         _permissaoUsuario = permissaoUsuario;
+        _logger = logger;
+        _templateRepository = templateRepository;
     }
 
     [HttpPost]
@@ -121,7 +127,7 @@ public class ConteudosController : ControllerBase
             return StatusCode(500, ResponseDto<string>.Falha($"Erro interno: {ex.Message}"));
         }
     }
-
+    
     [HttpPut("{id}")]
     public async Task<IActionResult> Editar(Guid id, [FromBody] ConteudoDto conteudoDto)
     {
@@ -129,15 +135,27 @@ public class ConteudosController : ControllerBase
         {
             var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
+            // Carrega o template associado ao conteúdo para validação
+            var template = await _templateRepository.ObterPorIdAsync(conteudoDto.TemplateId);
+            if (template == null)
+            {
+                return BadRequest(ResponseDto<string>.Falha("Template não encontrado."));
+            }
+
+            // Recarrega os campos preenchidos do DTO
             var camposPreenchidos = conteudoDto.CamposPreenchidos
                 .Select(c => new CampoPreenchido(c.Nome, c.Valor))
                 .ToList();
 
-            var conteudo = await _editarConteudoUseCase.ExecuteAsync(id, camposPreenchidos, usuarioId);
+            // Chama o UseCase para editar o conteúdo e passar o título
+            var conteudo = await _editarConteudoUseCase.ExecuteAsync(id, camposPreenchidos, usuarioId, conteudoDto.Titulo);
 
             if (conteudo == null)
+            {
                 return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
+            }
 
+            // Prepara o DTO de resposta com os dados atualizados
             var responseDto = new ConteudoDto
             {
                 Id = conteudo.Id,
