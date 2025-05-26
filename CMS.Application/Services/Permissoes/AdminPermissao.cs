@@ -10,13 +10,18 @@ public class AdminPermissao : IPermissaoUsuario
     public bool PodeListarConteudos() => true;
     public bool PodeObterConteudoPorId() => true;
     public bool PodeRejeitarConteudo() => true;
+    
 
     public bool PodeClonarTemplate() => true;
     public bool PodeCriarTemplate() => true;
     public bool PodeListarTemplates() => true;
     public bool PodeObterTemplatePorId() => true;
+    public bool PodeDeletarTemplate()  => true;
     
+
     public bool PodeCriarUsuario() => true;
     public bool PodeListarUsuarios() => true;
     public bool PodeObterUsuarioPorId() => true;
+    public bool PodeDeletarUsuario()  => true;
+    public bool PodeDeletarConteudo()  => true;
 }

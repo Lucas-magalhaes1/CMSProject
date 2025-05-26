@@ -9,13 +9,16 @@ public interface IPermissaoUsuario
     bool PodeListarConteudos();
     bool PodeObterConteudoPorId();
     bool PodeRejeitarConteudo();
+    bool PodeDeletarConteudo();  
 
     bool PodeClonarTemplate();
     bool PodeCriarTemplate();
     bool PodeListarTemplates();
     bool PodeObterTemplatePorId();
     
+    bool PodeDeletarTemplate();   
     bool PodeCriarUsuario();
     bool PodeListarUsuarios();
     bool PodeObterUsuarioPorId();
+    bool PodeDeletarUsuario();  
 }

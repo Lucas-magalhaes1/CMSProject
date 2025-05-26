@@ -13,14 +13,20 @@ namespace CMS.Application.Services.Permissoes
         public bool PodeListarConteudos() =>  true;
         public bool PodeObterConteudoPorId() => true;
         public bool PodeRejeitarConteudo() => false;
+        public bool PodeDeletarConteudo()  => true;
+        
+
 
         public bool PodeClonarTemplate() => true;
         public bool PodeCriarTemplate() => true;
         public bool PodeListarTemplates() => true;
         public bool PodeObterTemplatePorId() => true;
-    
+        public bool PodeDeletarTemplate() => true;
+       
         public bool PodeCriarUsuario() => false;
         public bool PodeListarUsuarios() => false;
         public bool PodeObterUsuarioPorId() => false;
+        public bool PodeDeletarUsuario()  => false;
+       
     }
 }
