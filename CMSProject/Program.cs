@@ -6,6 +6,7 @@ using CMS.Application.UseCases.Conteudos;
 using CMS.Application.UseCases.Templates;
 using CMS.Application.UseCases.Usuarios;
 using CMS.Domain.Chain.Handlers;
+using CMS.Domain.Entities;
 using CMS.Domain.Enums;
 using CMS.Infrastructure.Data;
 using CMS.Infrastructure.Data.Repositories;
@@ -49,6 +50,16 @@ builder.Services.AddSwaggerGen(options =>
             },
             Array.Empty<string>()
         }
+    });
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") 
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
@@ -134,12 +145,52 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    var usuariosPadrao = new List<Usuario>
+    {
+        new Usuario(
+            "Admin Padrão",
+            "admin@cms.com",
+            BCrypt.Net.BCrypt.HashPassword("admin123"),
+            PapelUsuario.Admin
+        ),
+        new Usuario(
+            "Editor Padrão",
+            "editor@cms.com",
+            BCrypt.Net.BCrypt.HashPassword("editor123"),
+            PapelUsuario.Editor
+        ),
+        new Usuario(
+            "Redator Padrão",
+            "redator@cms.com",
+            BCrypt.Net.BCrypt.HashPassword("redator123"),
+            PapelUsuario.Redator
+        )
+    };
+
+    foreach (var usuarioPadrao in usuariosPadrao)
+    {
+        var existeUsuario = db.Usuarios.Any(u => u.Email == usuarioPadrao.Email);
+        if (!existeUsuario)
+        {
+            db.Usuarios.Add(usuarioPadrao);
+        }
+    }
+
+    db.SaveChanges();
+}
+
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 app.UseAuthentication(); 
