@@ -183,12 +183,8 @@ using (var scope = app.Services.CreateScope())
     db.SaveChanges();
 }
 
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("AllowFrontend");
 
