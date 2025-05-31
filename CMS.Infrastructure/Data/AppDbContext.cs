@@ -1,5 +1,6 @@
 using CMS.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 public class AppDbContext : DbContext
 {
@@ -10,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Template> Templates { get; set; }
     public DbSet<Conteudo> Conteudos { get; set; }  // DbSet para Conteúdo
     public DbSet<CampoPreenchido> CampoPreenchidos { get; set; }  // DbSet para CampoPreenchido
+    public DbSet<Notificacao> Notificacoes { get; set; } // DbSet para Notificacao
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,6 +53,35 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Conteudo>()
             .Property(c => c.CriadoPor)  // O campo CriadoPor foi adicionado
             .IsRequired(); // Definir como obrigatório
+
+        // Configuração da entidade Notificacao
+        modelBuilder.Entity<Notificacao>(entity =>
+        {
+            entity.ToTable("Notificacoes");
+
+            entity.HasKey(n => n.Id);
+
+            entity.Property(n => n.Titulo)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(n => n.Mensagem)
+                .IsRequired();
+
+            entity.Property(n => n.DataCriacao)
+                .IsRequired();
+
+            entity.Property(n => n.Lida)
+                .IsRequired();
+
+            entity.Property(n => n.UsuarioId)
+                .IsRequired();
+            
+            entity.HasOne<Usuario>()
+                .WithMany()
+                .HasForeignKey(n => n.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         base.OnModelCreating(modelBuilder);
     }
