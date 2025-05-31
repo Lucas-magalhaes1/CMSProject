@@ -59,5 +59,12 @@ namespace CMS.Infrastructure.Data.Repositories
             _context.Conteudos.Remove(conteudo);
             await _context.SaveChangesAsync();
         }
+        public async Task<List<Conteudo>> ListarPorStatusAsync(string status)
+        {
+            return await _context.Conteudos
+                .Where(c => c.Status == status)
+                .ToListAsync();
+        }
+
     }
 }

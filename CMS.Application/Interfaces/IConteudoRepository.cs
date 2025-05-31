@@ -13,5 +13,6 @@ namespace CMS.Application.Interfaces
         Task<Conteudo?> ObterPorIdAsync(Guid id);
         Task AtualizarAsync(Conteudo conteudo);
         Task DeletarAsync(Conteudo conteudo);
+        Task<List<Conteudo>> ListarPorStatusAsync(string status);
     }
 }

@@ -93,6 +93,8 @@ builder.Services.AddScoped<AprovarConteudoHandler>();
 builder.Services.AddScoped<RejeitarConteudoHandler>();
 builder.Services.AddScoped<DevolverConteudoHandler>();
 builder.Services.AddScoped<INotificationObserver, ConteudoPublicadoObserver>();
+builder.Services.AddScoped<ListarConteudosAprovadosUseCase>();
+
 
 
 // Serviços de autenticação
