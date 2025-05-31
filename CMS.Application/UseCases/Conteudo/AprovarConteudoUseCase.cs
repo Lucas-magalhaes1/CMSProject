@@ -1,37 +1,57 @@
 using CMS.Application.Interfaces;
 using CMS.Domain.Chain.Handlers;
 using CMS.Domain.Entities;
+using CMS.Domain.Events;
+using System;
+using System.Threading.Tasks;
 
 public class AprovarConteudoUseCase
 {
     private readonly IConteudoRepository _conteudoRepository;
     private readonly AprovarConteudoHandler _aprovarConteudoHandler;
     private readonly IPermissaoUsuario _permissaoUsuario;
+    private readonly NotificationPublisher _notificationPublisher;
+    private readonly INotificationObserver _conteudoPublicadoObserver;
 
-    public AprovarConteudoUseCase(IConteudoRepository conteudoRepository, AprovarConteudoHandler aprovarConteudoHandler, IPermissaoUsuario permissaoUsuario)
+    public AprovarConteudoUseCase(
+        IConteudoRepository conteudoRepository,
+        AprovarConteudoHandler aprovarConteudoHandler,
+        IPermissaoUsuario permissaoUsuario,
+        NotificationPublisher notificationPublisher,
+        INotificationObserver conteudoPublicadoObserver) // Injetar observer também
     {
         _conteudoRepository = conteudoRepository;
         _aprovarConteudoHandler = aprovarConteudoHandler;
         _permissaoUsuario = permissaoUsuario;
+        _notificationPublisher = notificationPublisher;
+        _conteudoPublicadoObserver = conteudoPublicadoObserver;
+
+        // Registra o observer uma única vez por instância do UseCase
+        _notificationPublisher.Register(_conteudoPublicadoObserver);
     }
 
     public async Task<Conteudo?> ExecuteAsync(Guid id)
     {
-        // Verifica se o usuário tem permissão para aprovar o conteúdo
         if (!_permissaoUsuario.PodeAprovarConteudo())
-        {
             throw new UnauthorizedAccessException("Você não tem permissão para aprovar conteúdo.");
-        }
 
         var conteudo = await _conteudoRepository.ObterPorIdAsync(id);
         if (conteudo == null)
             return null;
 
-        // Passa o conteúdo para o handler de aprovação
         var conteudoAprovado = await _aprovarConteudoHandler.ManipularConteudo(conteudo);
-
-        // Salva a alteração no banco de dados
         await _conteudoRepository.AtualizarAsync(conteudoAprovado);
+
+        // Criar evento para notificação
+        var conteudoPublicadoEvent = new ConteudoPublicadoEvent(
+            conteudoAprovado.Id,
+            conteudoAprovado.Titulo,
+            conteudoAprovado.CriadoPor,
+            conteudoAprovado.NomeCriador,
+            DateTime.Now);
+
+        // Disparar notificação via Observer
+        _notificationPublisher.Notify(conteudoPublicadoEvent);
 
         return conteudoAprovado;
     }
