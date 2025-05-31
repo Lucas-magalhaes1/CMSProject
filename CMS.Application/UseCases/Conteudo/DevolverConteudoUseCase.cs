@@ -26,10 +26,10 @@ public class DevolverConteudoUseCase
         if (conteudo == null)
             return null;
 
-        // Passa o conteúdo para o handler de devolução com o comentário de correção
+       
         var conteudoDevolvido = await _devolverConteudoHandler.ManipularConteudo(conteudo, comentario);
 
-        // Salva a alteração no banco de dados
+       
         await _conteudoRepository.AtualizarAsync(conteudoDevolvido);
 
         return conteudoDevolvido;

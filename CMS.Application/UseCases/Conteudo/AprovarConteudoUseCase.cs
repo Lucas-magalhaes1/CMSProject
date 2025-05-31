@@ -18,7 +18,7 @@ public class AprovarConteudoUseCase
         AprovarConteudoHandler aprovarConteudoHandler,
         IPermissaoUsuario permissaoUsuario,
         NotificationPublisher notificationPublisher,
-        INotificationObserver conteudoPublicadoObserver) // Injetar observer também
+        INotificationObserver conteudoPublicadoObserver) 
     {
         _conteudoRepository = conteudoRepository;
         _aprovarConteudoHandler = aprovarConteudoHandler;
@@ -26,7 +26,7 @@ public class AprovarConteudoUseCase
         _notificationPublisher = notificationPublisher;
         _conteudoPublicadoObserver = conteudoPublicadoObserver;
 
-        // Registra o observer uma única vez por instância do UseCase
+        
         _notificationPublisher.Register(_conteudoPublicadoObserver);
     }
 
@@ -42,7 +42,7 @@ public class AprovarConteudoUseCase
         var conteudoAprovado = await _aprovarConteudoHandler.ManipularConteudo(conteudo);
         await _conteudoRepository.AtualizarAsync(conteudoAprovado);
 
-        // Criar evento para notificação
+        
         var conteudoPublicadoEvent = new ConteudoPublicadoEvent(
             conteudoAprovado.Id,
             conteudoAprovado.Titulo,
@@ -50,7 +50,7 @@ public class AprovarConteudoUseCase
             conteudoAprovado.NomeCriador,
             DateTime.Now);
 
-        // Disparar notificação via Observer
+        
         _notificationPublisher.Notify(conteudoPublicadoEvent);
 
         return conteudoAprovado;

@@ -1,7 +1,7 @@
 using CMS.Application.Interfaces;
 using CMS.Domain.Events;
 using CMS.Domain.Entities;
-using System.Threading.Tasks;
+
 
 namespace CMS.Infrastructure.Notifications
 {

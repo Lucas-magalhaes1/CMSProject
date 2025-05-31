@@ -18,7 +18,6 @@ public class DeletarTemplateUseCase
         if (template == null)
             return false;
 
-        // Permite deletar se for admin ou se for o proprietário do template
         if (!usuarioEhAdmin && template.CriadoPor != usuarioId)
         {
             throw new UnauthorizedAccessException("Você não tem permissão para deletar este template.");

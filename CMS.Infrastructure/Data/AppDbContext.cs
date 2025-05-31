@@ -9,9 +9,9 @@ public class AppDbContext : DbContext
 
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Template> Templates { get; set; }
-    public DbSet<Conteudo> Conteudos { get; set; }  // DbSet para Conteúdo
-    public DbSet<CampoPreenchido> CampoPreenchidos { get; set; }  // DbSet para CampoPreenchido
-    public DbSet<Notificacao> Notificacoes { get; set; } // DbSet para Notificacao
+    public DbSet<Conteudo> Conteudos { get; set; }  
+    public DbSet<CampoPreenchido> CampoPreenchidos { get; set; }  
+    public DbSet<Notificacao> Notificacoes { get; set; } 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,8 +22,7 @@ public class AppDbContext : DbContext
             .HasConversion<string>();
 
         modelBuilder.Entity<Template>().ToTable("Templates");
-
-        // Configuração para Owned Entity (Value Object) de Template
+        
         modelBuilder.Entity<Template>()
             .OwnsMany(t => t.Campos, cb =>
             {
@@ -33,13 +32,13 @@ public class AppDbContext : DbContext
                 cb.ToTable("TemplateCampos");
             });
 
-        // Relacionamento entre Conteudo e Template
+       
         modelBuilder.Entity<Conteudo>()
             .HasOne(c => c.Template)
             .WithMany()
             .HasForeignKey("TemplateId");
 
-        // Configuração da entidade CampoPreenchido
+       
         modelBuilder.Entity<Conteudo>()
             .OwnsMany(c => c.CamposPreenchidos, cb =>
             {
@@ -49,12 +48,12 @@ public class AppDbContext : DbContext
                 cb.ToTable("CampoPreenchidos");
             });
 
-        // Configuração do campo CriadoPor (autor do conteúdo)
+        
         modelBuilder.Entity<Conteudo>()
-            .Property(c => c.CriadoPor)  // O campo CriadoPor foi adicionado
-            .IsRequired(); // Definir como obrigatório
+            .Property(c => c.CriadoPor)  
+            .IsRequired(); 
 
-        // Configuração da entidade Notificacao
+        
         modelBuilder.Entity<Notificacao>(entity =>
         {
             entity.ToTable("Notificacoes");

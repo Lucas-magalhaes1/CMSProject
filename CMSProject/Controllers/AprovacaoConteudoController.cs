@@ -23,7 +23,7 @@ public class AprovacaoConteudoController : ControllerBase
         _submeterConteudoUseCase = submeterConteudoUseCase;
     }
 
-    // Endpoint para Submeter conteúdo
+    
     [HttpPost("{id}/submeter")]
     public async Task<IActionResult> Submeter(Guid id)
     {
@@ -42,13 +42,13 @@ public class AprovacaoConteudoController : ControllerBase
                 Nome = c.Nome,
                 Valor = c.Valor
             }).ToList(),
-            Comentario = conteudo.Comentario // Inclui o comentário de devolução, caso exista
+            Comentario = conteudo.Comentario 
         };
 
         return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo submetido para revisão"));
     }
 
-    // Endpoint para Aprovar conteúdo
+    
     [HttpPost("{id}/aprovar")]
     public async Task<IActionResult> Aprovar(Guid id)
     {
@@ -67,17 +67,17 @@ public class AprovacaoConteudoController : ControllerBase
                 Nome = c.Nome,
                 Valor = c.Valor
             }).ToList(),
-            Comentario = conteudo.Comentario // Inclui o comentário, caso exista
+            Comentario = conteudo.Comentario 
         };
 
         return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo aprovado"));
     }
 
-    // Endpoint para Rejeitar conteúdo
+    
     [HttpPost("{id}/rejeitar")]
     public async Task<IActionResult> Rejeitar(Guid id, [FromBody] string comentario)
     {
-        var conteudo = await _rejeitarConteudoUseCase.ExecuteAsync(id, comentario);  // Passa o comentário aqui
+        var conteudo = await _rejeitarConteudoUseCase.ExecuteAsync(id, comentario);  
         if (conteudo == null)
             return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
 
@@ -92,13 +92,13 @@ public class AprovacaoConteudoController : ControllerBase
                 Nome = c.Nome,
                 Valor = c.Valor
             }).ToList(),
-            Comentario = conteudo.Comentario // Inclui o comentário de devolução
+            Comentario = conteudo.Comentario 
         };
 
         return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo rejeitado"));
     }
 
-    // Endpoint para Devolver conteúdo
+    
     [HttpPost("{id}/devolver")]
     public async Task<IActionResult> DevolverConteudo(Guid id, [FromBody] string comentario)
     {
@@ -118,7 +118,7 @@ public class AprovacaoConteudoController : ControllerBase
                 Nome = c.Nome,
                 Valor = c.Valor
             }).ToList(),
-            Comentario = conteudo.Comentario // Inclui o comentário de devolução
+            Comentario = conteudo.Comentario 
         };
 
         return Ok(ResponseDto<ConteudoDto>.Ok(responseDto, "Conteúdo devolvido para correção"));

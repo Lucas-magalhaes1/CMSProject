@@ -118,8 +118,8 @@ public class ConteudosController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
-            // Retorna uma resposta 403 Forbidden com a mensagem de erro
-            return Forbid(); // Ou, para incluir a mensagem, use o StatusCode diretamente
+            
+            return Forbid(); 
         }
 
         catch (Exception ex)
@@ -134,28 +134,25 @@ public class ConteudosController : ControllerBase
         try
         {
             var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-            // Carrega o template associado ao conteúdo para validação
+            
             var template = await _templateRepository.ObterPorIdAsync(conteudoDto.TemplateId);
             if (template == null)
             {
                 return BadRequest(ResponseDto<string>.Falha("Template não encontrado."));
             }
-
-            // Recarrega os campos preenchidos do DTO
+            
             var camposPreenchidos = conteudoDto.CamposPreenchidos
                 .Select(c => new CampoPreenchido(c.Nome, c.Valor))
                 .ToList();
 
-            // Chama o UseCase para editar o conteúdo e passar o título
+            
             var conteudo = await _editarConteudoUseCase.ExecuteAsync(id, camposPreenchidos, usuarioId, conteudoDto.Titulo);
 
             if (conteudo == null)
             {
                 return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
             }
-
-            // Prepara o DTO de resposta com os dados atualizados
+            
             var responseDto = new ConteudoDto
             {
                 Id = conteudo.Id,
@@ -188,8 +185,7 @@ public class ConteudosController : ControllerBase
         try
         {
             var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-            // Verificar permissão de acesso ao conteúdo por ID
+            
             if (!_permissaoUsuario.PodeObterConteudoPorId())
                 return Forbid();
 
@@ -197,9 +193,8 @@ public class ConteudosController : ControllerBase
 
             if (conteudo == null)
                 return NotFound(ResponseDto<string>.Falha("Conteúdo não encontrado"));
-
-            // Permitir acesso se for admin/editor ou criador do conteúdo
-            bool usuarioEhAdminOuEditor = _permissaoUsuario.PodeAprovarConteudo(); // Considera admin/editor
+            
+            bool usuarioEhAdminOuEditor = _permissaoUsuario.PodeAprovarConteudo();
             if (!usuarioEhAdminOuEditor && conteudo.CriadoPor != usuarioId)
                 return Forbid();
 

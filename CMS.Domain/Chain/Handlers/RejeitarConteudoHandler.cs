@@ -12,7 +12,6 @@ namespace CMS.Domain.Chain.Handlers
                 
                 if (!string.IsNullOrEmpty(comentario))
                 {
-                    // Adiciona o comentário de rejeição, se presente
                     conteudo.Comentario = comentario;
                 }
 

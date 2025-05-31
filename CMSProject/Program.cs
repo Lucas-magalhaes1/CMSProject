@@ -8,7 +8,6 @@ using CMS.Application.UseCases.Usuarios;
 using CMS.Domain.Chain.Handlers;
 using CMS.Domain.Entities;
 using CMS.Domain.Enums;
-using CMS.Infrastructure.Data;
 using CMS.Infrastructure.Data.Repositories;
 using CMS.Infrastructure.Notifications;
 using CMS.Infrastructure.Services;
@@ -16,11 +15,24 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+var desiredOrder = new List<string>
+{
+    "login",
+    "auth",
+    "usuarios",
+    "notificações",
+    "templates",
+    "conteudos",
+    "conteudos publicos",
+    "aprovação conteudo"
+};
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -46,6 +58,20 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    // Ordena as ações pela tag, conforme ordem desejada
+    options.OrderActionsBy(apiDesc =>
+    {
+        var tag = apiDesc.GroupName ?? apiDesc.ActionDescriptor.RouteValues["controller"]?.ToLower();
+
+        var index = desiredOrder.FindIndex(s => s.ToLower() == tag?.ToLower());
+        if (index == -1) index = int.MaxValue;
+
+        return $"{index}_{apiDesc.RelativePath}";
+    });
+
+    // Aplica filtro para ordenar as tags no swagger UI
+    options.DocumentFilter<CustomTagOrderFilter>(desiredOrder);
 });
 
 builder.Services.AddCors(options =>
@@ -94,8 +120,6 @@ builder.Services.AddScoped<RejeitarConteudoHandler>();
 builder.Services.AddScoped<DevolverConteudoHandler>();
 builder.Services.AddScoped<INotificationObserver, ConteudoPublicadoObserver>();
 builder.Services.AddScoped<ListarConteudosAprovadosUseCase>();
-
-
 
 // Serviços de autenticação
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -186,3 +210,28 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
+// ----- Filtro para ordenar tags no Swagger UI -----
+public class CustomTagOrderFilter : IDocumentFilter
+{
+    private readonly List<string> _order;
+
+    public CustomTagOrderFilter(List<string> order)
+    {
+        _order = order;
+    }
+
+    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+    {
+        if (swaggerDoc.Tags == null) return;
+
+        swaggerDoc.Tags = swaggerDoc.Tags
+            .OrderBy(t =>
+            {
+                var index = _order.FindIndex(s => s.ToLower() == t.Name.ToLower());
+                return index == -1 ? int.MaxValue : index;
+            })
+            .ToList();
+    }
+}

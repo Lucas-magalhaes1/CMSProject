@@ -15,7 +15,7 @@ public class DeletarUsuarioUseCase
 
     public async Task<bool> ExecuteAsync(Guid idUsuarioParaDeletar, Guid idUsuarioLogado, PapelUsuario papelUsuarioLogado)
     {
-        // Só o próprio usuário ou admin podem deletar
+        
         bool usuarioEhAdmin = papelUsuarioLogado == PapelUsuario.Admin;
         bool usuarioEhProprio = idUsuarioParaDeletar == idUsuarioLogado;
 

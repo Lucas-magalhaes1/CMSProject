@@ -4,23 +4,21 @@ public class CampoPreenchido
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Nome { get; private set; }
-    public string Valor { get; private set; }  // Valor agora é apenas string
-
-    // Construtor para EF Core
+    public string Valor { get; private set; }  
+    
     protected CampoPreenchido() { }
 
-    public CampoPreenchido(string nome, string valor)  // Valor é agora do tipo string
+    public CampoPreenchido(string nome, string valor)  
     {
         Nome = nome;
-        Valor = valor;  // Armazenando valor diretamente como string
+        Valor = valor;  
     }
 
     public string GetValor()
     {
-        return Valor;  // Apenas retorna o valor como string
+        return Valor; 
     }
     
-    // Método para atualizar o valor
     public void AtualizarValor(string novoValor)
     {
         Valor = novoValor;

@@ -21,10 +21,10 @@ public class DeletarConteudoUseCase
         if (conteudo == null)
             return false;
 
-        // Verifica se o usuário é o criador ou tem permissão especial (ex: Admin)
+        
         if (conteudo.CriadoPor != usuarioId && !_permissaoUsuario.PodeAprovarConteudo())
         {
-            // PodeAprovarConteudo() usada aqui como proxy para 'é admin' — ajuste conforme sua permissão real de admin
+            
             throw new UnauthorizedAccessException("Você só pode deletar conteúdos que criou ou se for administrador.");
         }
 

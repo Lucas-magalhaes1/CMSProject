@@ -20,7 +20,7 @@ namespace CMS.Domain.Chain.Handlers
         {
             if (conteudo.Status == "Submetido")
             {
-                conteudo.DevolverParaCorrecao(comentario);  // Passa o comentário para o método de devolução
+                conteudo.DevolverParaCorrecao(comentario);  
                 return conteudo;
             }
             else if (ProximoHandler != null)

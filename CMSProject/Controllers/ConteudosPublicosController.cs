@@ -15,12 +15,11 @@ public class ConteudosPublicosController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous] // Permite acesso sem autenticação
+    [AllowAnonymous] 
     public async Task<IActionResult> Get()
     {
         var conteudos = await _listarConteudosAprovadosUseCase.ExecuteAsync();
-
-        // Opcional: mapear para DTO, se desejar
+        
 
         return Ok(conteudos);
     }

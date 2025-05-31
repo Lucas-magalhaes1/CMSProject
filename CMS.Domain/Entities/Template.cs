@@ -9,10 +9,10 @@ public class Template
     public Guid CriadoPor { get; private set; }
     public string NomeCriador { get; private set; } = null!;
 
-    // Construtor para EF Core
+    
     protected Template() { }
 
-    // Construtor principal, agora com criadoPor e nomeCriador
+    
     public Template(string nome, List<CampoTemplate> campos, Guid criadoPor, string nomeCriador)
     {
         Nome = nome;
@@ -21,7 +21,7 @@ public class Template
         NomeCriador = nomeCriador ?? throw new ArgumentNullException(nameof(nomeCriador));
     }
 
-    // Clone atualizado para manter CriadoPor e NomeCriador
+    
     public Template Clone()
     {
         var camposClone = new List<CampoTemplate>();

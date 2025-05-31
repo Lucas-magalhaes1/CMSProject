@@ -25,8 +25,7 @@ namespace CMS.Application.UseCases.Templates
                 return null;
 
             var clone = templateOriginal.Clone();
-
-            // Alterar o nome para indicar que é uma cópia
+            
             clone = new Template(clone.Nome + " - Cópia", clone.Campos, usuarioId, nomeCriador);
 
             var novoTemplate = await _templateRepository.CriarAsync(clone);

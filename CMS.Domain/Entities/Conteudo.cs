@@ -15,8 +15,7 @@
         public string Status { get;  set; }
         
         public string NomeCriador { get; set; } = null!;
-
-        // Construtor para EF Core
+        
         protected Conteudo() { }
 
         public Conteudo(string titulo, Template template, List<CampoPreenchido> camposPreenchidos, Guid criadoPor,string nomeCriador)
@@ -34,8 +33,7 @@
             var camposClone = new List<CampoPreenchido>(CamposPreenchidos);
             return new Conteudo(Titulo + " - Cópia", Template, camposClone, CriadoPor, NomeCriador);
         }
-
-        // Métodos para manipulação de conteúdo
+        
         public void Submeter()
         {
             Status = "Submetido";
@@ -48,8 +46,8 @@
         
         public void DevolverParaCorrecao(string comentario)
         {
-            Status = "Rascunho";  // Retorna para o status "Submetido"
-            Comentario = comentario;  // Adiciona o comentário de correção
+            Status = "Rascunho";  
+            Comentario = comentario; 
         }
         
         public void AlterarTitulo(string novoTitulo)

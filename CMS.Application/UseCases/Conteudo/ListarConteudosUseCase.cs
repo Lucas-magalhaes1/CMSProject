@@ -16,14 +16,12 @@ namespace CMS.Application.UseCases.Conteudos
 
         public async Task<List<Conteudo>> ExecuteAsync(Guid usuarioId)
         {
-            // Se o usuário é um admin ou editor, pode listar todos os conteúdos
-            if (_permissaoUsuario.PodeAprovarConteudo())  // Admin ou Editor
+            
+            if (_permissaoUsuario.PodeAprovarConteudo())  
             {
                 return await _conteudoRepository.ListarAsync();
             }
-            
-            // Caso contrário, apenas o autor pode listar seus próprios conteúdos
-            return await _conteudoRepository.ListarPorCriadorAsync(usuarioId); // Método para listar apenas os conteúdos criados pelo usuário
+            return await _conteudoRepository.ListarPorCriadorAsync(usuarioId); 
         }
     }
 }

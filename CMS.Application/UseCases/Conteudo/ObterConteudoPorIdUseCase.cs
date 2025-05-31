@@ -16,7 +16,6 @@ namespace CMS.Application.UseCases.Conteudos
 
         public async Task<Conteudo?> ExecuteAsync(Guid id)
         {
-            // Verifica se o usuário tem permissão para visualizar o conteúdo
             if (!_permissaoUsuario.PodeObterConteudoPorId())  
             {
                 throw new UnauthorizedAccessException("Você não tem permissão para visualizar o conteúdo.");

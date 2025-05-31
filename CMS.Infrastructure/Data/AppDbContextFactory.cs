@@ -10,7 +10,6 @@ namespace CMS.Infrastructure.Data
     {
         public AppDbContext CreateDbContext(string[] args)
         {
-            // Ajuste o caminho conforme sua estrutura, normalmente o appsettings.json fica no projeto startup (CMSProject)
             var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../CMSProject");
 
             var configuration = new ConfigurationBuilder()

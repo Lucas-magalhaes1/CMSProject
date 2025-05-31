@@ -16,7 +16,6 @@ namespace CMS.Application.UseCases.Templates
 
         public async Task<List<Template>> ExecuteAsync()
         {
-            // Verifica se o usuário tem permissão para listar templates
             if (!_permissaoUsuario.PodeListarTemplates())  
             {
                 throw new UnauthorizedAccessException("Você não tem permissão para listar os templates.");

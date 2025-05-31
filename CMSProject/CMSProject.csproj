@@ -25,13 +25,22 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Middlewares\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+      <Content Remove="Middlewares\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Middlewares\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Middlewares\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Middlewares\**" />
     </ItemGroup>
 
 </Project>
