@@ -12,13 +12,17 @@ interface Conteudo {
   id: string
   titulo: string
   status: string
+  comentario?: string
   camposPreenchidos: CampoPreenchido[]
 }
+
 
 export default function AprovacoesPage() {
   const { token, role, isAuthenticated } = useAuth()
   const router = useRouter()
   const [conteudos, setConteudos] = useState<Conteudo[]>([])
+  const [conteudoAberto, setConteudoAberto] = useState<Conteudo | null>(null)
+
 
   useEffect(() => {
     if (token === null) return
@@ -48,57 +52,72 @@ export default function AprovacoesPage() {
 
   const aprovar = async (id: string) => {
     try {
-      await axios.post(`http://localhost:8080/api/AprovacaoConteudo/${id}/aprovar`, {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      await axios.post(
+        `http://localhost:8080/api/AprovacaoConteudo/${id}/aprovar`,
+        { id }, // inclui ID no corpo, se o backend exigir
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
-      alert('Conteúdo aprovado!')
+      alert('Conteúdo aprovado com sucesso!')
       location.reload()
-    } catch {
+    } catch (error: any) {
+      console.error('Erro ao aprovar conteúdo:', error.response?.data || error)
       alert('Erro ao aprovar conteúdo')
     }
   }
 
   const rejeitar = async (id: string) => {
-    const comentario = prompt('Motivo da rejeição:')
-    if (!comentario) return
+    let comentario = ''
+    do {
+      comentario = prompt('Motivo da rejeição (mínimo 5 caracteres):')?.trim() || ''
+    } while (comentario.length < 5)
 
     try {
-      await axios.post(`http://localhost:8080/api/AprovacaoConteudo/${id}/rejeitar`, {
-        id,
-        comentario,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      await axios.post(
+        `http://localhost:8080/api/AprovacaoConteudo/${id}/rejeitar`,
+        JSON.stringify(comentario), // 👈 envia como string literal
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
 
       alert('Conteúdo rejeitado!')
       location.reload()
-    } catch {
+    } catch (error: any) {
+      console.error('Erro ao rejeitar conteúdo:', error.response?.data || error)
       alert('Erro ao rejeitar conteúdo')
     }
   }
 
   const devolver = async (id: string) => {
-    const comentario = prompt('Comentário para devolução:')
-    if (!comentario) return
+    let comentario = ''
+    do {
+      comentario = prompt('Comentário para correção (mínimo 5 caracteres):')?.trim() || ''
+    } while (comentario.length < 5)
 
     try {
-      await axios.post(`http://localhost:8080/api/AprovacaoConteudo/${id}/devolver`, {
-        id,
-        comentario,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      await axios.post(
+        `http://localhost:8080/api/AprovacaoConteudo/${id}/devolver`,
+        JSON.stringify(comentario), 
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
 
       alert('Conteúdo devolvido para correção!')
       location.reload()
-    } catch {
+    } catch (error: any) {
+      console.error('Erro ao devolver conteúdo:', error.response?.data || error)
       alert('Erro ao devolver conteúdo')
     }
   }
@@ -142,6 +161,43 @@ export default function AprovacoesPage() {
                 >
                   Devolver para correção
                 </button>
+                <button
+                  onClick={() => setConteudoAberto(conteudo)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                  Visualizar
+                </button>
+
+                {conteudoAberto && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded shadow-lg max-w-xl w-full space-y-4 relative">
+                      <h2 className="text-2xl font-bold mb-2">{conteudoAberto.titulo}</h2>
+                      <p className="text-sm text-gray-500">Status: {conteudoAberto.status}</p>
+
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-gray-700">Campos preenchidos:</h3>
+                        {conteudoAberto.camposPreenchidos?.map((campo, index) => (
+                          <div key={index} className="text-sm">
+                            <strong>{campo.nome}:</strong> {campo.valor}
+                          </div>
+                        ))}
+                      </div>
+
+                      {conteudoAberto.comentario && (
+                        <div className="bg-yellow-100 text-yellow-800 p-3 rounded border border-yellow-300">
+                          <strong>Comentário:</strong> {conteudoAberto.comentario}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setConteudoAberto(null)}
+                        className="mt-4 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -35,18 +35,6 @@ export default function EditorPage() {
               Revisar Conteúdos Submetidos
             </button>
           </Link>
-
-          <Link href="/templates">
-            <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition">
-              Ver Templates
-            </button>
-          </Link>
-
-          <Link href="/conteudos">
-            <button className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition">
-              Ver Meus Conteúdos
-            </button>
-          </Link>
         </div>
       </div>
     </div>

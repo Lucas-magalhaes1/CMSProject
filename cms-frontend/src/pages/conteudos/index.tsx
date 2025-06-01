@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/router'
 import axios from 'axios'
+import Link from 'next/link'
 
 interface CampoPreenchido {
   nome: string
@@ -12,14 +13,16 @@ interface Conteudo {
   id: string
   titulo: string
   status: string
-  templateId: string
+  comentario?: string
   camposPreenchidos: CampoPreenchido[]
 }
+
 
 export default function ListaConteudosPage() {
   const { token, isAuthenticated } = useAuth()
   const router = useRouter()
   const [conteudos, setConteudos] = useState<Conteudo[]>([])
+  const [abertoId, setAbertoId] = useState<string | null>(null)
 
   useEffect(() => {
     if (token === null) return
@@ -44,6 +47,21 @@ export default function ListaConteudosPage() {
 
     fetchConteudos()
   }, [token, isAuthenticated, router])
+
+  const excluirConteudo = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este conteúdo?')) return
+
+    try {
+      await axios.delete(`http://localhost:8080/api/Conteudos/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      alert('Conteúdo excluído com sucesso!')
+      location.reload()
+    } catch (error) {
+      alert('Erro ao excluir conteúdo.')
+    }
+  }
 
   const submeterConteudo = async (id: string) => {
     try {
@@ -82,20 +100,77 @@ export default function ListaConteudosPage() {
           {conteudos.map((conteudo) => (
             <div
               key={conteudo.id}
-              className="bg-white p-4 rounded shadow flex justify-between items-center"
+              className="bg-white p-4 rounded shadow space-y-2"
             >
-              <div>
-                <h2 className="text-lg font-semibold">{conteudo.titulo}</h2>
-                <p className="text-sm text-gray-600">Status: <strong>{conteudo.status}</strong></p>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-semibold">{conteudo.titulo}</h2>
+                  <p className="text-sm text-gray-600">
+                    Status:{" "}
+                    {conteudo.status === 'Rascunho' ? (
+                      <span className="font-semibold text-gray-700">Rascunho</span>
+                    ) : conteudo.status === 'Submetido' ? (
+                      <span className="font-semibold text-blue-700">Submetido</span>
+                    ) : conteudo.status === 'Aprovado' ? (
+                      <span className="font-semibold text-green-700">Aprovado</span>
+                    ) : conteudo.status === 'Rejeitado' ? (
+                      <span className="font-semibold text-red-700">Rejeitado</span>
+                    ) : (
+                      <span className="font-semibold">{conteudo.status}</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAbertoId(abertoId === conteudo.id ? null : conteudo.id)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  >
+                    {abertoId === conteudo.id ? 'Fechar' : 'Visualizar'}
+                  </button>
+
+                  <button
+                    onClick={() => excluirConteudo(conteudo.id)}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                  >
+                    Excluir
+                  </button>
+
+                  {conteudo.status === 'Rascunho' && (
+                    <button
+                      onClick={() => submeterConteudo(conteudo.id)}
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    >
+                      Submeter para aprovação
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {conteudo.status === 'Rascunho' && (
-                <button
-                  onClick={() => submeterConteudo(conteudo.id)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Submeter para aprovação
-                </button>
+              {abertoId === conteudo.id && (
+                <div className="mt-3 px-4 py-3 bg-gray-50 rounded border border-gray-300 space-y-3">
+                  <h3 className="text-md font-medium">Conteúdo Preenchido:</h3>
+
+                  {conteudo.camposPreenchidos?.map((campo, index) => (
+                    <div key={index}>
+                      <strong>{campo.nome}:</strong> {campo.valor}
+                    </div>
+                  ))}
+
+                  {conteudo.comentario && (
+                    <div className="bg-yellow-100 text-yellow-800 p-3 rounded border border-yellow-300">
+                      <strong>Comentário do editor:</strong> {conteudo.comentario}
+                    </div>
+                  )}
+
+                  {(conteudo.status === 'Rascunho' || conteudo.status === 'Devolvido') && (
+                    <Link href={`/conteudos/visualizar?id=${conteudo.id}`}>
+                      <button className="mt-2 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
+                        Editar
+                      </button>
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           ))}
