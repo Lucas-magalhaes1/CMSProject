@@ -54,11 +54,9 @@ export default function AprovacoesPage() {
     try {
       await axios.post(
         `http://localhost:8080/api/AprovacaoConteudo/${id}/aprovar`,
-        { id }, // inclui ID no corpo, se o backend exigir
+        {}, // ✅ corpo vazio
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       )
 
