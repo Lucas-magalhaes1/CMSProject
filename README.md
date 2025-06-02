@@ -1,404 +1,386 @@
+# CMSProject - Sistema de Gerenciamento de Conteúdo
 
-# CMS Frontend - Fluxos e Interação com API
+Este projeto é um sistema de gerenciamento de conteúdo (CMS) desenvolvido para facilitar a criação, edição, revisão e publicação de notícias, artigos, eventos e outros tipos de conteúdo digital.
 
-## 1. Autenticação do Usuário (Login)
-Antes de começar a interagir com qualquer conteúdo ou template, o usuário (redator, editor ou admin) precisa fazer login para obter um token de autorização (JWT).
+Com ele, diferentes tipos de usuários (como redatores, editores e administradores) podem colaborar no processo de produção, garantindo que o conteúdo seja revisado, aprovado e publicado de forma organizada e segura.
 
-### Endpoint:
-`POST /api/Auth/login`
+## Funcionalidades principais
 
-### Requisição:
+- **Criação de templates de conteúdo:** Define modelos com campos específicos (como título, corpo, data, autor) que facilitam a criação de conteúdos padronizados.
 
-```json
-{
-  "email": "redator@exemplo.com",
-  "senha": "senhaSegura"
-}
-```
+- **Gerenciamento de conteúdos:** Criação, edição, clonagem e exclusão de conteúdos baseados em templates.
 
-### Descrição:
-O frontend deve enviar a requisição com as credenciais do usuário para obter o token JWT. Esse token será usado em todas as requisições subsequentes, incluindo criação, edição, submissão, etc.
+- **Fluxo de aprovação:** Conteúdos podem ser submetidos para revisão, aprovados, rejeitados ou devolvidos para ajustes com comentários para o autor.
+
+- **Controle de acesso:** Usuários com diferentes papéis possuem permissões específicas para criar, editar, aprovar e gerenciar conteúdos.
+
+- **Notificações:** O sistema envia avisos para os usuários responsáveis quando ocorrem ações importantes, como a aprovação de um conteúdo.
+
+- **Acesso público:** Usuários não autenticados podem acessar conteúdos aprovados, funcionando como um portal de notícias.
 
 ---
 
-## 2. Criar Template (Admin, Editor e redator)
-Um administrador ou editor ou redator pode criar e deve um novo template, que será usado na criação de conteúdos somente é possivel criar um conteudo usando um template de base.
 
-### Endpoint:
-`POST /api/Templates`
 
-### Requisição:
+# Mapeamento dos Padrões, Princípios e Arquitetura no Projeto CMS
+
+Este documento apresenta o mapeamento dos principais padrões de projeto, princípios SOLID, arquitetura limpa e conceitos de programação orientada a objetos (POO) aplicados no projeto CMS (Content Management System).
+
+---
+
+## Padrões de Projeto
+
+| Padrão de Projeto          | Localização / Arquivos                              | Explicação / Como Está Implementado                                 |
+|---------------------------|----------------------------------------------------|--------------------------------------------------------------------|
+| **Factory Method**         | `PermissaoFactory` (em `CMS.Application.Services`) | Método `CriarPermissao` que cria instâncias de `IPermissaoUsuario` conforme papel (Admin, Editor, Redator). Centraliza criação de objetos complexos. <br>Possivelmente usado na criação de `Usuario` e `Conteudo` via construtores ou fábricas específicas (não enviadas, mas indicadas). | Permite encapsular a criação de entidades, facilitando expansão e manutenção.                           |
+| **Observer**               | `NotificationPublisher` (em `CMS.Domain.Events`)    | Mantém lista de observers e notifica todos quando um evento ocorre (ex: conteúdo publicado).           |
+|                           | `INotificationObserver` (interface)                 | Define contrato para observadores responderem a eventos.                                               |
+|                           | `ConteudoPublicadoObserver` (em `CMS.Infrastructure.Notifications`) | Implementa a ação de enviar notificação (ex: persistir no banco) quando evento de conteúdo publicado é disparado. |
+| **Chain of Responsibility**| Pasta `CMS.Domain.Chain` e arquivos `AprovarConteudoHandler`, `SubmeterConteudoHandler`, `RejeitarConteudoHandler`, `DevolverConteudoHandler` | Handlers encadeados para processar o fluxo de aprovação, cada um lidando com uma ação específica e podendo passar para o próximo. |
+| **Proxy**                  | Implementação indireta via `IPermissaoUsuario` e verificações no Use Cases (ex: `CriarConteudoUseCase`) e Controllers (`ConteudosController`) | O padrão proxy está no controle de acesso, onde a interface de permissão verifica se o usuário pode executar determinada ação, funcionando como um "proxy" antes de permitir o acesso. |
+| **Prototype**              | Método `Clone()` na entidade `Conteudo` (em `CMS.Domain.Entities.Conteudo`) | Permite clonar conteúdos com seus campos, para evitar recriação manual e facilitar cópias.             |
+|                           | Também aplicável para Templates (não enviado código, mas citado no projeto) | Redatores podem clonar templates para criar novos conteúdos a partir deles.                            |
+
+---
+
+## Arquitetura Limpa
+
+| Item                           | Onde Está Aplicado (Arquivos/Pastas/Classes)                                  | Explicação / Comentário                                                                                           |
+|-------------------------------|-----------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| **Separação em camadas**       | Pastas `CMS.Domain`, `CMS.Application`, `CMS.Infrastructure`, `CMSProject`  | Domínio contém entidades e regras puras; Application com casos de uso; Infrastructure com repositórios e serviços técnicos; API com controllers e endpoints. Responsabilidades bem separadas. |
+| **Comunicação entre camadas**  | Controllers (`ConteudosController`), Use Cases (`CriarConteudoUseCase`), Repositórios (`ConteudoRepository`) | Controller delega lógica para Use Cases, que usam entidades do domínio e persistem via repositórios — fluxo típico da Clean Architecture. |
+
+---
+
+## Princípios SOLID
+
+| Princípio                  | Onde Está Aplicado (Arquivos/Pastas/Classes)                  | Explicação / Comentário                                                                                           |
+|----------------------------|--------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| **SRP** (Responsabilidade única)     | Entidades `Conteudo`, `Usuario`, Use Cases, Controllers      | Cada classe tem uma responsabilidade única: Entidades modelam domínio, Use Cases orquestram lógica, Controllers lidam com API.                             |
+| **OCP** (Aberto/Fechado)              | Interfaces (ex: `IConteudoRepository`, `IPermissaoUsuario`), Handlers Chain | Permite extensão adicionando handlers e implementações sem modificar código existente (ex: adicionar nova permissão ou handler).                           |
+| **LSP** (Substituição de Liskov)      | Implementações de interfaces (ex: `IPermissaoUsuario` com AdminPermissao etc) | Objetos derivados (permissões específicas) podem substituir base sem alterar comportamento esperado.                                                  |
+| **ISP** (Segregação de interfaces)    | Interfaces específicas para repositórios, permissões, notificações          | Evita interfaces gordas; cada cliente depende só do que usa (ex: `IPermissaoUsuario` só métodos relacionados à permissões).                                   |
+| **DIP** (Inversão de dependências)    | Injeção de dependências no Startup (`Program.cs`), Use Cases, Controllers    | Depende de abstrações (interfaces), não de implementações concretas, facilitando testes e manutenção.                                                   |
+
+---
+
+## Conceitos de Programação Orientada a Objetos (POO)
+
+| Conceito                    | Onde Está Aplicado (Arquivos/Pastas/Classes)                  | Explicação / Comentário                                                                                           |
+|-----------------------------|---------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| **Encapsulamento**           | Propriedades privadas (`private set`), métodos para alteração de estado em entidades (`Conteudo`, `Usuario`) | Controle rigoroso do estado interno das entidades, modificações feitas por métodos específicos que validam regras. |
+| **Abstração**               | Interfaces para repositórios, permissões, notificações        | Esconde detalhes de implementação, permite uso genérico e fácil substituição.                                     |
+| **Herança e Polimorfismo**  | Implementações das interfaces de permissões e handlers Chain  | Classes concretas implementam interfaces, podendo ser usadas polimorficamente (ex: diferentes permissões ou handlers). |
+| **Coesão**                  | Classes focadas em uma responsabilidade clara                 | Cada classe tem métodos e propriedades relacionados, evitando acoplamento interno desnecessário.                  |
+| **Construtores e Métodos**  | Uso consistente para garantir objetos válidos (ex: `Conteudo` com campos obrigatórios) | Assegura objetos sempre em estado válido e consistente ao longo do tempo.                                        |
+
+---
+
+ # 1. Módulos Implementados e Suas Funções
+
+### Usuário
+- Entidade `Usuario` com papéis definidos (Admin, Editor, Redator).
+- Cadastro, autenticação via JWT e permissões aplicadas pelo padrão **Strategy**.
+- Controle de criação e edição de usuários restrito aos papéis Admin e Editor, garantindo segurança.
+
+### Templates
+- Entidade `Template` com campos obrigatórios e opcionais.
+- CRUD completo para templates via API.
+- Clonagem de templates utilizando o padrão **Prototype** para facilitar criação rápida de novos modelos.
+
+### Conteúdos
+- Entidade `Conteudo` com preenchimento baseado no Template associado.
+- Fluxo completo contemplando criação, edição, submissão para revisão, aprovação, rejeição e devolução com comentários para feedback.
+- Clonagem de conteúdos também via padrão **Prototype**.
+- Uso do padrão **Chain of Responsibility** para o fluxo de aprovação editorial.
+- Validação dos campos obrigatórios do conteúdo conforme o template definido.
+- Controle rigoroso de acesso para que apenas o autor ou administradores possam editar ou deletar conteúdos.
+
+### Controle de Aprovação
+- Handlers específicos para as ações de Submeter, Aprovar, Rejeitar e Devolver conteúdo.
+- Endpoints dedicados para gerenciar essas operações.
+- Comentários são usados para fornecer feedback no processo de revisão e devolução.
+
+### Notificações
+- Evento disparado sempre que um conteúdo é aprovado.
+- Observers (como `ConteudoPublicadoObserver`) notificam os usuários responsáveis painel interno.
+- Arquitetura facilmente extensível para múltiplos canais de notificação.
+
+### Autenticação e Permissões
+- Login autenticado via JWT.
+- Middleware para proteger rotas e validar permissões conforme papel do usuário.
+- Permissões diferenciadas usando o padrão **Strategy**.
+
+---
+
+## Comunicação entre Camadas
+
+1. O frontend faz uma requisição HTTP para um endpoint no Controller (API).
+2. O Controller converte o JSON recebido em um DTO e chama o Use Case correspondente.
+3. O Use Case acessa as entidades do domínio para aplicar as regras de negócio e realiza validações necessárias.
+4. Para persistência, o Use Case utiliza os repositórios implementados via Entity Framework Core na camada de Infrastructure.
+5. Caso ocorra um evento relevante (como a aprovação de um conteúdo), o Use Case dispara este evento para o sistema de Observer.
+6. O Observer então envia notificações para os usuários interessados.
+7. Por fim, o resultado processado é enviado de volta ao frontend no formato de DTO JSON.
+
+
+## Exemplos de Requisições 
+
+### 1. Templates: 
 
 ```json
+[
+  {
+    "nome": "Notícia de Tecnologia",
+    "campos": [
+      { "nome": "Título", "tipo": 0, "obrigatorio": true },
+      { "nome": "Corpo", "tipo": 2, "obrigatorio": true },
+      { "nome": "Autor", "tipo": 0, "obrigatorio": false },
+      { "nome": "Data de Publicação", "tipo": 3, "obrigatorio": false }
+    ]
+  }
+
+
+  {
+    "nome": "Resenha de Filme",
+    "campos": [
+      { "nome": "Título", "tipo": 0, "obrigatorio": true },
+      { "nome": "Sinopse", "tipo": 2, "obrigatorio": true },
+      { "nome": "Diretor", "tipo": 0, "obrigatorio": false },
+      { "nome": "Ano de Lançamento", "tipo": 1, "obrigatorio": false },
+      { "nome": "Nota", "tipo": 4, "obrigatorio": false }
+    ]
+  }
+
+
+  {
+    "nome": "Artigo Científico",
+    "campos": [
+      { "nome": "Título", "tipo": 0, "obrigatorio": true },
+      { "nome": "Resumo", "tipo": 2, "obrigatorio": true },
+      { "nome": "Autores", "tipo": 2, "obrigatorio": true },
+      { "nome": "Data de Publicação", "tipo": 3, "obrigatorio": false },
+      { "nome": "Referências", "tipo": 2, "obrigatorio": false }
+    ]
+  }
+
+
+  {
+    "nome": "Evento Cultural",
+    "campos": [
+      { "nome": "Nome do Evento", "tipo": 0, "obrigatorio": true },
+      { "nome": "Descrição", "tipo": 2, "obrigatorio": true },
+      { "nome": "Data do Evento", "tipo": 3, "obrigatorio": true },
+      { "nome": "Local", "tipo": 0, "obrigatorio": true },
+      { "nome": "Preço do Ingresso", "tipo": 1, "obrigatorio": false }
+    ]
+  }
+]
+
+
+```
+### 2. Conteúdos Baseados nos Templates
+
+```json
+
 {
-  "nome": "Template de Ficção",
-  "campos": [
-    {
-      "nome": "Título",
-      "tipo": 0,
-      "obrigatorio": true
-    },
-    {
-      "nome": "Corpo",
-      "tipo": 2,
-      "obrigatorio": true
-    },
-    {
-      "nome": "Resumo",
-      "tipo": 1,
-      "obrigatorio": false
-    }
+  "titulo": "Lançamento do Novo Smartphone X1000",
+  "templateId": "<id_do_template_1>",
+  "camposPreenchidos": [
+    { "nome": "Título", "valor": "Lançamento do Novo Smartphone X1000" },
+    { "nome": "Corpo", "valor": "A empresa XYZ lançou hoje o seu mais novo smartphone, o X1000, com recursos inovadores..." },
+    { "nome": "Autor", "valor": "Maria Silva" }
   ]
 }
-```
 
-### Descrição:
-O frontend deve permitir que  insira os dados para criar um template. Cada template pode ter campos obrigatórios e não obrigatórios. Esses templates são usados para a criação de conteúdo.
 
----
-
-## 3. Criar Conteúdo (Redator)
-Agora, o redator pode criar um conteúdo utilizando um template previamente criado. o Redator passa o template que vai usar o Id dai ele deve usar o s campos que sao obrigatorios (true) e pode usar ou não os falsos
-
-### Endpoint:
-`POST /api/Conteudos`
-
-### Requisição:
-
-```json
 {
-  "titulo": "Explorando o Cosmos - A Jornada do Futuro",
-  "templateId": "ec031f2e-49b8-4894-bfd6-b1347da986f3",
+  "titulo": "Resenha: Viagem ao Centro da Terra",
+  "templateId": "<id_do_template_2>",
   "camposPreenchidos": [
-    {
-      "nome": "Título",
-      "valor": "Explorando o Cosmos - A Jornada do Futuro"
-    },
-    {
-      "nome": "Corpo",
-      "valor": "Em um futuro distante, a humanidade explora os limites do espaço em busca de novas fronteiras..."
-    }
+    { "nome": "Título", "valor": "Resenha: Viagem ao Centro da Terra" },
+    { "nome": "Sinopse", "valor": "Uma aventura emocionante onde os personagens exploram o interior do planeta..." },
+    { "nome": "Diretor", "valor": "John Doe" },
+    { "nome": "Ano de Lançamento", "valor": "2023" },
+    { "nome": "Nota", "valor": "8.5" }
   ]
 }
-```
 
-### Descrição:
-O frontend usa o template já criado para preencher os campos obrigatórios (e opcionais, se o redator desejar) para criar um novo conteúdo.
 
----
-
-## 4. Submeter Conteúdo para Aprovação (Redator)
-Após criar o conteúdo, o redator submete ele para aprovação. Isso muda o status do conteúdo para "Submetido".
-
-### Endpoint:
-`POST /api/Conteudos/{id}/submeter`
-
-### Requisição:
-
-```json
 {
-  "id": "d6a9f380-f5b2-43c8-9eeb-482d3f903a97"
-}
-```
-
-### Descrição:
-O frontend envia a requisição para que o conteúdo seja submetido para revisão do editor. O status do conteúdo será alterado para "Submetido".
-
----
-
-## 5. Aprovar Conteúdo (Editor)
-O editor aprova o conteúdo, passando o status para "Aprovado". onde depois vou aplicar uma rota publica so para exibir esses conteudos.
-
-### Endpoint:
-`POST /api/AprovacaoConteudo/{id}/aprovar`
-
-### Requisição:
-
-```json
-{
-  "id": "d6a9f380-f5b2-43c8-9eeb-482d3f903a97"
-}
-```
-
-### Descrição:
-O frontend envia uma requisição para o editor aprovar o conteúdo submetido. O status do conteúdo será alterado para "Aprovado".
-
----
-
-## 6. Rejeitar Conteúdo (Editor)
-Se o conteúdo não estiver adequado, o editor pode rejeitar o conteúdo. O editor também adiciona um comentário explicando os motivos.
-
-### Endpoint:
-`POST /api/AprovacaoConteudo/{id}/rejeitar`
-
-### Requisição:
-
-```json
-{
-  "id": "d6a9f380-f5b2-43c8-9eeb-482d3f903a97",
-  "comentario": "Conteúdo não atende aos requisitos de qualidade."
-}
-```
-
-### Descrição:
-Se o conteúdo não for adequado, o editor pode rejeitar o conteúdo e adicionar um comentário sobre o motivo. O status do conteúdo será alterado para "Rejeitado" e o comentário será salvo.
-
----
-
-## 7. Devolver Conteúdo para Correção (Editor)
-O editor pode devolver o conteúdo ao redator para ajustes, adicionando um comentário com a correção solicitada.
-
-### Endpoint:
-`POST /api/AprovacaoConteudo/{id}/devolver`
-
-### Requisição:
-
-```json
-{
-  "id": "d6a9f380-f5b2-43c8-9eeb-482d3f903a97",
-  "comentario": "Por favor, ajuste o título para torná-lo mais atraente."
-}
-```
-
-### Descrição:
-Caso o editor não aprove o conteúdo, mas ache que ele precisa de correção, o editor pode devolver o conteúdo para o redator com um comentário detalhado sobre o que precisa ser alterado e o conteudo volta para o estado rascunho para depois poder ser submetido novamente.
-
----
-
-## 8. Editar Conteúdo (Redator)
-O redator edita o conteúdo com base no feedback recebido após o conteúdo ser devolvido para correção. Esse endpoint so permite editar o conteudo ali ja feito nao adcionar novas coisas ainda como novos campos etc.
-
-### Endpoint:
-`PUT /api/Conteudos/{id}`
-
-### Requisição:
-
-```json
-{
-  "id": "d6a9f380-f5b2-43c8-9eeb-482d3f903a97",
-  "titulo": "Explorando o Cosmos - Versão Ajustada",
-  "templateId": "ec031f2e-49b8-4894-bfd6-b1347da986f3",
-  "status": "Rascunho",
+  "titulo": "Estudo sobre Energias Renováveis",
+  "templateId": "<id_do_template_3>",
   "camposPreenchidos": [
-    {
-      "nome": "Título",
-      "valor": "Explorando o Cosmos - Versão Ajustada"
-    },
-    {
-      "nome": "Corpo",
-      "valor": "Em um futuro distante, a humanidade explora os limites do espaço em busca de novas fronteiras, agora com mais detalhes."
-    }
-  ],
-  "comentario": "Ajustes no título feitos conforme solicitado."
+    { "nome": "Título", "valor": "Estudo sobre Energias Renováveis" },
+    { "nome": "Resumo", "valor": "Este estudo analisa as tendências de energias renováveis no Brasil..." },
+    { "nome": "Autores", "valor": "Carlos Pereira, Ana Costa" },
+    { "nome": "Referências", "valor": "Referência 1, Referência 2" }
+  ]
 }
-```
 
-### Descrição:
-O redator faz os ajustes solicitados pelo editor, edita o conteúdo e o envia novamente para o editor submetendo.
 
----
-
-## 9. Clonar Conteúdo
-O redator ou editor pode clonar um conteúdo para reutilizá-lo em outro momento ou para criar uma nova versão. 
-
-### Endpoint:
-`POST /api/Conteudos/{id}/clone`
-
-### Requisição:
-
-```json
 {
-  "id": "d6a9f380-f5b2-43c8-9eeb-482d3f903a97"
+  "titulo": "Festival de Jazz 2025",
+  "templateId": "<id_do_template_5>",
+  "camposPreenchidos": [
+    { "nome": "Nome do Evento", "valor": "Festival de Jazz 2025" },
+    { "nome": "Descrição", "valor": "Um festival anual que reúne os maiores nomes do jazz mundial." },
+    { "nome": "Data do Evento", "valor": "2025-07-15" },
+    { "nome": "Local", "valor": "Teatro Municipal" }
+  ]
 }
+
+
+```
+# Como subir o Backend e banco de dados via Docker e rodar o proejto 
+
+## 📦 **1. Pré-requisitos obrigatórios:**
+- Docker instalado ([Docker Desktop](https://www.docker.com/products/docker-desktop/)).
+- Git instalado.
+- Porta **5432** (Postgres) e **8080** (API) **livres**.
+
+---
+
+## 🚀 **2. Passos para rodar o backend:**
+
+### ✅ **Clonar o repositório:**
+
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd <PASTA_DO_PROJETO>
 ```
 
-### Descrição:
-O frontend pode enviar uma requisição para clonar o conteúdo existente. Isso cria uma nova versão do conteúdo com as mesmas informações, mas sem status e campos preenchidos.
-
-# Descrição das Rotas e Regras de Acesso
-
-## 1. Usuários
-
-### Criação de Usuários
-- Apenas Admin e Editor podem criar novos usuários.
-- O Redator não tem permissão para criar usuários.
-
-### Acesso aos Templates
-- Todos os usuários autenticados (Admin, Editor e Redator) têm acesso a todos os templates existentes.
-
-### Edição de Templates
-- Apenas o usuário que criou o template ou um Admin pode editar um template.
-
-### Exclusão de Templates
-- Somente o criador do template ou um Admin pode excluí-lo.
+**🔔 Substituir `<URL_DO_REPOSITORIO>` e `<PASTA_DO_PROJETO>` conforme o repositório.**
 
 ---
 
-## 2. Templates
+## ✅ **3. Subir o banco de dados e a API via Docker:**
 
-### Criação de Template
-- Pode ser feito por Admin ou Editor.
-- Ao criar um template, o sistema permite adicionar campos obrigatórios e não obrigatórios.
+O projeto já contém o **docker-compose.yml** e o **Dockerfile** configurados.
 
-### Clonagem de Template
-- Funciona criando um novo template com o nome original seguido de "Cópia".
-- O novo template mantém os mesmos campos e estrutura.
+### **Rodar o seguinte comando dentro da pasta do projeto:**
 
-### Exclusão de Template
-- Apenas o criador ou um Admin pode excluir um template.
+```bash
+docker compose up --build
+```
 
----
+ou, se estiver usando versão antiga do Docker Compose:
 
-## 3. Conteúdos
-
-### Criação de Conteúdo
-- Um Redator pode criar um conteúdo baseado em qualquer template disponível.
-- O conteúdo deve obrigatoriamente preencher todos os campos obrigatórios do template.
-- O status inicial será "Rascunho".
-
-### Acesso aos Conteúdos
-- Os Redatores podem visualizar apenas os conteúdos que criaram.
-- Os Editores e Admins podem visualizar todos os conteúdos criados, independentemente de quem os criou.
-
-### Edição de Conteúdo
-- Só é possível editar os conteúdos que o Redator ou Editor criou.
-- O Admin também pode editar qualquer conteúdo.
-- A edição é restrita aos campos que já foram preenchidos no conteúdo original (não permite adicionar novos campos).
-
-### Exclusão de Conteúdo
-- Somente o Redator que criou o conteúdo ou um Admin pode excluí-lo.
-
-### Clone de Conteúdo
-- A funcionalidade de clonagem ainda está sendo ajustada e será implementada posteriormente.
+```bash
+docker-compose up --build
+```
 
 ---
 
-## 4. Fluxo de Aprovação
+## ✅ **4. O que vai acontecer automaticamente:**
 
-### Submissão para Aprovação
-- O conteúdo criado por um Redator pode ser submetido para aprovação de um Editor.
-- O status do conteúdo será alterado para "Submetido".
-
-### Aprovação de Conteúdo
-- O Editor pode aprovar o conteúdo.
-- O status será alterado para "Aprovado".
-
-### Rejeição de Conteúdo
-- O Editor pode rejeitar o conteúdo e fornecer um comentário explicando o motivo da rejeição.
-- O status do conteúdo será alterado para "Rejeitado".
-
-### Devolução para Correção
-- O Editor pode devolver o conteúdo ao Redator com um comentário explicativo.
-- O status será alterado para "Devolvido".
+✅ O serviço **Postgres** vai subir na porta **5432**  
+✅ A **API** será compilada, publicada e executada na porta **8080**  
+✅ O backend vai:  
+- Aplicar automaticamente as **migrations** para criar as tabelas no banco  
+- Criar automaticamente **usuários padrão**:  
+  - `admin@cms.com / admin123`  
+  - `editor@cms.com / editor123`  
+  - `redator@cms.com / redator123`
 
 ---
 
-## 5. Acesso de Usuários
+## ✅ **5. Como testar se está funcionando:**
 
-### Controle de Acesso Baseado em Papéis
-A aplicação usa o padrão Strategy para controlar as permissões dos usuários com base no papel atribuído (Admin, Editor, Redator).
+1. **Verificar se os containers estão rodando:**
 
-- **Admin**: Tem permissões totais para criar, editar, excluir e visualizar qualquer conteúdo e template.
-- **Editor**: Pode editar, aprovar, rejeitar ou devolver conteúdo, mas só pode editar conteúdo criado por outros Editor ou Redator.
-- **Redator**: Pode criar e editar apenas seus próprios conteúdos.
+```bash
+docker ps
+```
+
+Deve aparecer algo como:  
+- `cms_api` na porta `8080`  
+- `postgres_db` na porta `5432`
 
 ---
 
-## Considerações Finais
+2. **Testar a API:**
 
-- A parte de **Notificação (Observer)** ainda precisa ser implementada, mas o objetivo é notificar os Editores e Redatores sobre as ações realizadas no conteúdo (como aprovação ou rejeição).
-- O processo de **Clone de Conteúdo** ainda está em desenvolvimento e será revisado posteriormente.
-"""
+- Acesse no navegador:  
+  http://localhost:8080/swagger  
+
+Deve carregar a **Swagger UI** com todas as rotas documentadas.
+
 ---
 
-## Conclusão
+## ✅ **6. Configuração da conexão do frontend:**
 
-Este fluxo de trabalho permite que o sistema CMS funcione de maneira eficiente, com uma clara divisão de responsabilidades entre os papéis de administrador, editor e redator. O frontend deve interagir com esses endpoints para garantir que cada etapa do processo, desde a criação de templates até a aprovação ou rejeição de conteúdo, seja gerenciada adequadamente. A implementação de autenticação com JWT garante a segurança e a continuidade das interações entre o usuário e a aplicação.
+- O frontend deve consumir a API via:  
+  **http://localhost:8080/**
 
-### Instalação
+- As credenciais default para testes:  
+  **Usuário:** `admin@cms.com`  
+  **Senha:** `admin123`
 
-# CMS Project - Backend (.NET 8)
+---
 
-Este repositório contém a API backend do CMS, desenvolvida em C# utilizando .NET 8 e PostgreSQL.
+## ✅ **7. Sobre as portas:**
 
-O projeto é composto por múltiplos módulos:
-- `CMSProject` → **Projeto principal** (executável).
-- `CMS.Application` → Camada de aplicação.
-- `CMS.Infrastructure` → Infraestrutura (banco, serviços).
-- `CMS.Domain` → Domínio (entidades, regras de negócio).
+| Serviço    | Porta externa | Porta interna |
+|------------|---------------|---------------|
+| PostgreSQL | 5432          | 5432          |
+| API        | 8080          | 8080          |
 
-## Como Rodar a Aplicação
+🔔 Certifique-se que **nenhum outro serviço** está usando essas portas.  
+Se tiver, pode alterar no `docker-compose.yml` assim:  
 
-### 1. Modo Manual (Desenvolvimento Local)
+```yaml
+ports:
+  - "8081:8080"
+```
 
-**Pré-requisitos:**  
-- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)  
-- [PostgreSQL](https://www.postgresql.org/download/)  
-- [VS Code](https://code.visualstudio.com/) ou qualquer IDE compatível  
+E depois acessar a API em:  
+http://localhost:8081/swagger  
 
-#### Passos:
-1. Clone o repositório:
-    ```bash
-    git clone https://github.com/seu-usuario/seu-repo.git
-    cd seu-repo
-    ```
-2. Configure a `ConnectionStrings:DefaultConnection` no `appsettings.json` do `CMSProject` com seus dados locais de PostgreSQL:
-    ```json
-    "ConnectionStrings": {
-      "DefaultConnection": "Host=localhost;Port=5432;Database=cms_db;Username=cms_user;Password=123456"
-    }
-    ```
-3. No terminal, navegue até o projeto principal (`CMSProject`):
-    ```bash
-    cd CMSProject
-    ```
-4. Execute:
-    ```bash
-    dotnet run
-    ```
-5. A API estará disponível em:
-    ➡️ `http://localhost:5031` (ou a porta configurada no `launchSettings.json`)
+---
 
-### 2. Modo Automático com Docker
+## ✅ **8. Parar os containers:**
 
-**Pré-requisitos:**  
-- Docker  
-- Docker Compose  
+Quando quiser **parar** a API e o banco:  
 
-#### Passos:
-1. Clone o repositório:
-    ```bash
-    git clone https://github.com/seu-usuario/seu-repo.git
-    cd seu-repo
-    ```
-2. Execute:
-    ```bash
-    docker-compose up --build -d
-    ```
-3. A API estará disponível em:
-    ➡️ `http://localhost:8080`
+```bash
+docker compose down
+```
 
-O banco de dados PostgreSQL também estará rodando automaticamente.
+Isso vai **parar e remover** os containers, mas o volume do banco (os dados) vai continuar salvo em:  
 
-### Configurações Importantes:
-A API usa variáveis de ambiente para configuração no Docker:
-- `ConnectionStrings__DefaultConnection`
-- `Jwt` (chaves, issuer, audience, etc.)
+```yaml
+volumes:
+  postgres_data:
+```
 
-Já estão definidas no `docker-compose.yml`. No ambiente local, configure no `appsettings.json`.
+Se quiser **apagar tudo**, incluindo dados:  
 
-### Estrutura do Projeto
-```plaintext
-├── CMSProject/            # Projeto principal (executável)
-├── CMS.Application/      # Camada de aplicação
-├── CMS.Infrastructure/   # Infraestrutura (banco, serviços)
-├── CMS.Domain/           # Entidades e domínio
-├── docker-compose.yml    # Arquivo para subir o ambiente com Docker
-├── CMSProject/Dockerfile # Dockerfile da aplicação
-└── .dockerignore         # Arquivos ignorados no build Docker
-Como Consumir a API
-Após rodar, acesse a documentação Swagger:
+```bash
+docker compose down -v
+```
 
-➡️ http://localhost:8080/swagger
+---
 
-ou ➡️ http://localhost:5031/swagger (no modo manual)
+## ✅ **9. Se der algum erro:**
+
+- **Porta em uso:**  
+  - Libere a porta ou altere no `docker-compose.yml`.
+
+- **Erro de permissão:**  
+  - Rode como **administrador** ou com `sudo`.
+
+- **Container não sobe:**  
+  - Rode `docker compose logs` para ver o erro.
+
+- **API não sobe:**  
+  - Pode ser que o banco não esteja pronto. Aguarde alguns segundos e tente novamente.
+
+---
+
+
+
+
+
+
+
