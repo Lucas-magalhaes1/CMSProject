@@ -32,7 +32,7 @@ Este documento apresenta o mapeamento dos principais padrões de projeto, princ�
 
 | Padrão de Projeto          | Localização / Arquivos                              | Explicação / Como Está Implementado                                 |
 |---------------------------|----------------------------------------------------|--------------------------------------------------------------------|
-| **Factory Method**         | `PermissaoFactory` (em `CMS.Application.Services`) | Método `CriarPermissao` que cria instâncias de `IPermissaoUsuario` conforme papel (Admin, Editor, Redator). Centraliza criação de objetos complexos. <br>Possivelmente usado na criação de `Usuario` e `Conteudo` via construtores ou fábricas específicas (não enviadas, mas indicadas). | Permite encapsular a criação de entidades, facilitando expansão e manutenção.                           |
+| **Factory Method**         | `PermissaoFactory` (em `CMS.Application.Services`) | Método `CriarPermissao` que cria instâncias de `IPermissaoUsuario` conforme papel (Admin, Editor, Redator). Centraliza criação de objetos complexos. <br>Possivelmente usado na criação de `Usuario` e `Conteudo` via construtores ou fábricas específicas. | Permite encapsular a criação de entidades, facilitando expansão e manutenção.                           |
 | **Observer**               | `NotificationPublisher` (em `CMS.Domain.Events`)    | Mantém lista de observers e notifica todos quando um evento ocorre (ex: conteúdo publicado).           |
 |                           | `INotificationObserver` (interface)                 | Define contrato para observadores responderem a eventos.                                               |
 |                           | `ConteudoPublicadoObserver` (em `CMS.Infrastructure.Notifications`) | Implementa a ação de enviar notificação (ex: persistir no banco) quando evento de conteúdo publicado é disparado. |
@@ -232,7 +232,7 @@ Este documento apresenta o mapeamento dos principais padrões de projeto, princ�
 
 
 ```
-# Como subir o Backend e banco de dados via Docker e rodar o proejto 
+# Como subir o Backend e banco de dados via Docker
 
 ## 📦 **1. Pré-requisitos obrigatórios:**
 - Docker instalado ([Docker Desktop](https://www.docker.com/products/docker-desktop/)).
@@ -277,7 +277,7 @@ docker-compose up --build
 ✅ O serviço **Postgres** vai subir na porta **5432**  
 ✅ A **API** será compilada, publicada e executada na porta **8080**  
 ✅ O backend vai:  
-- Aplicar automaticamente as **migrations** para criar as tabelas no banco  
+- O Back-End vai aplicar as **migrations** para criar as tabelas no banco  
 - Criar automaticamente **usuários padrão**:  
   - `admin@cms.com / admin123`  
   - `editor@cms.com / editor123`  
