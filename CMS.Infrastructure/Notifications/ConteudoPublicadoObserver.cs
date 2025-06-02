@@ -1,29 +1,39 @@
 using CMS.Application.Interfaces;
-using CMS.Domain.Events;
 using CMS.Domain.Entities;
+using CMS.Domain.Events;
+using Microsoft.Extensions.DependencyInjection;
 
+namespace CMS.Infrastructure.Notifications;
 
-namespace CMS.Infrastructure.Notifications
+public class ConteudoPublicadoObserver : INotificationObserver
 {
-    public class ConteudoPublicadoObserver : INotificationObserver
+    private readonly IServiceScopeFactory _scopeFactory;
+
+    public ConteudoPublicadoObserver(IServiceScopeFactory scopeFactory)
     {
-        private readonly INotificacaoRepository _notificacaoRepository;
+        _scopeFactory = scopeFactory;
+    }
 
-        public ConteudoPublicadoObserver(INotificacaoRepository notificacaoRepository)
-        {
-            _notificacaoRepository = notificacaoRepository;
-        }
+   
+    public void Update(ConteudoPublicadoEvent conteudoPublicadoEvent)
+    {
+        
+        _ = UpdateAsync(conteudoPublicadoEvent);
+    }
 
-        public async void Update(ConteudoPublicadoEvent conteudoPublicadoEvent)
-        {
-            var mensagem = $"Seu conteúdo '{conteudoPublicadoEvent.Titulo}' foi aprovado em {conteudoPublicadoEvent.DataPublicacao}.";
+   
+    public async Task UpdateAsync(ConteudoPublicadoEvent conteudoPublicadoEvent)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var notificacaoRepository = scope.ServiceProvider.GetRequiredService<INotificacaoRepository>();
 
-            var notificacao = new Notificacao(
-                usuarioId: conteudoPublicadoEvent.CriadorId,
-                titulo: "Conteúdo Aprovado",
-                mensagem: mensagem);
+        var mensagem = $"Seu conteúdo '{conteudoPublicadoEvent.Titulo}' foi aprovado em {conteudoPublicadoEvent.DataPublicacao}.";
 
-            await _notificacaoRepository.AdicionarAsync(notificacao);
-        }
+        var notificacao = new Notificacao(
+            usuarioId: conteudoPublicadoEvent.CriadorId,
+            titulo: "Conteúdo Aprovado",
+            mensagem: mensagem);
+
+        await notificacaoRepository.AdicionarAsync(notificacao);
     }
 }
