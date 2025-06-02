@@ -85,6 +85,28 @@ namespace CMS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notificacoes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UsuarioId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Titulo = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Mensagem = table.Column<string>(type: "text", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Lida = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notificacoes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notificacoes_Usuarios_UsuarioId",
+                        column: x => x.UsuarioId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CampoPreenchidos",
                 columns: table => new
                 {
@@ -115,6 +137,11 @@ namespace CMS.Infrastructure.Migrations
                 column: "TemplateId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notificacoes_UsuarioId",
+                table: "Notificacoes",
+                column: "UsuarioId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TemplateCampos_TemplateId",
                 table: "TemplateCampos",
                 column: "TemplateId");
@@ -127,13 +154,16 @@ namespace CMS.Infrastructure.Migrations
                 name: "CampoPreenchidos");
 
             migrationBuilder.DropTable(
+                name: "Notificacoes");
+
+            migrationBuilder.DropTable(
                 name: "TemplateCampos");
 
             migrationBuilder.DropTable(
-                name: "Usuarios");
+                name: "Conteudos");
 
             migrationBuilder.DropTable(
-                name: "Conteudos");
+                name: "Usuarios");
 
             migrationBuilder.DropTable(
                 name: "Templates");
